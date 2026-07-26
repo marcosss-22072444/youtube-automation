@@ -1,0 +1,7 @@
+# config.yaml
+# Configuración NO sensible del proyecto. Este archivo SÍ se sube a Git.
+# Los secretos (API keys, tokens) van en .env, nunca aquí.
+
+log_level: "INFO"
+
+ai_provider: "gemini"   # Proveedor de IA de texto activo (más adelante podremos cambiarlo aquí)
