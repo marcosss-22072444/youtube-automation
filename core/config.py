@@ -33,6 +33,7 @@ class Settings:
         self.log_level: str = yaml_config.get("log_level", DEFAULT_LOG_LEVEL)
         self.ai_provider: str = yaml_config.get("ai_provider", DEFAULT_AI_PROVIDER)
         self.gemini_model: str = yaml_config.get("gemini_model", "gemini-3.6-flash")
+        self.ideas_context_limit: int = yaml_config.get("ideas_context_limit", 50)
 
     @staticmethod
     def _get_required_env(var_name: str) -> str:

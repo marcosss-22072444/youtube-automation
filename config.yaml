@@ -5,3 +5,7 @@
 log_level: "INFO"
 
 ai_provider: "gemini"   # Proveedor de IA de texto activo (más adelante podremos cambiarlo aquí)
+log_level: "INFO"
+ai_provider: "gemini"
+gemini_model: "gemini-3.6-flash"
+ideas_context_limit: 50

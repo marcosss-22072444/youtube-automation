@@ -26,6 +26,18 @@ CREATE TABLE IF NOT EXISTS channels (
 );
 """
 
+_CREATE_IDEAS_TABLE = """
+CREATE TABLE IF NOT EXISTS ideas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+"""
+
 
 def initialize_database():
     """
@@ -34,8 +46,8 @@ def initialize_database():
     """
     with get_connection() as conn:
         conn.execute(_CREATE_CHANNELS_TABLE)
-        # Futuras tablas (ideas, videos, stats...) se añadirán aquí
-        # conn.execute(_CREATE_IDEAS_TABLE)
+        conn.execute(_CREATE_IDEAS_TABLE)
+        # Futuras tablas (videos, stats...) se añadirán aquí
         # conn.execute(_CREATE_VIDEOS_TABLE)
 
     logger.info("Base de datos inicializada correctamente.")
