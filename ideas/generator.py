@@ -11,7 +11,7 @@ from ideas import repository as idea_repository
 from ideas.models import Idea
 from ideas.exceptions import IdeaGenerationError
 from core.ai_providers.base import TextAIProvider
-from core.ai_providers.gemini_provider import GeminiProvider
+from core.ai_providers.factory import get_default_text_provider
 from core.exceptions import AIProviderError
 from core.logger import get_logger
 from core.constants import CONTENT_TYPE_SHORT, VALID_CONTENT_TYPES
@@ -82,7 +82,7 @@ def generate_idea_for_channel(
         )
 
     if provider is None:
-        provider = GeminiProvider()
+        provider = get_default_text_provider()
 
     previous_titles = idea_repository.get_recent_titles_for_context(channel.id)
     prompt = _build_prompt(channel, content_type, previous_titles)

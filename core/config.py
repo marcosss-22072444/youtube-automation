@@ -26,6 +26,7 @@ class Settings:
     def __init__(self):
         # --- Secretos desde .env ---
         self.gemini_api_key: str = self._get_required_env("GEMINI_API_KEY")
+        self.groq_api_key: str = self._get_required_env("GROQ_API_KEY")
 
         # --- Configuración no sensible desde config.yaml ---
         yaml_config = self._load_yaml_config()
@@ -33,6 +34,7 @@ class Settings:
         self.log_level: str = yaml_config.get("log_level", DEFAULT_LOG_LEVEL)
         self.ai_provider: str = yaml_config.get("ai_provider", DEFAULT_AI_PROVIDER)
         self.gemini_model: str = yaml_config.get("gemini_model", "gemini-3.6-flash")
+        self.groq_model: str = yaml_config.get("groq_model", "openai/gpt-oss-120b")
         self.ideas_context_limit: int = yaml_config.get("ideas_context_limit", 50)
         self.narration_wpm: int = yaml_config.get("narration_wpm", 150)
         self.script_duration_seconds: dict = yaml_config.get(

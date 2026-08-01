@@ -11,7 +11,7 @@ from scripts import repository as script_repository
 from scripts.models import Script
 from scripts.exceptions import ScriptGenerationError
 from core.ai_providers.base import TextAIProvider
-from core.ai_providers.gemini_provider import GeminiProvider
+from core.ai_providers.factory import get_default_text_provider
 from core.config import settings
 from core.exceptions import AIProviderError
 from core.logger import get_logger
@@ -52,7 +52,7 @@ def generate_script_for_idea(idea: Idea, provider: TextAIProvider | None = None)
     la duración configurada para su content_type, y lo guarda.
     """
     if provider is None:
-        provider = GeminiProvider()
+        provider = get_default_text_provider()
 
     target_words = _calculate_target_words(idea.content_type)
     prompt = _build_prompt(idea, target_words)
