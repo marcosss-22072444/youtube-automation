@@ -20,6 +20,7 @@ class Channel:
     shorts_per_week: int = 0
     long_videos_per_week: int = 0
     status: str = "active"
+    voice_name: str = "ef_dora"
     id: Optional[int] = None
     created_at: Optional[str] = None
 

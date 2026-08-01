@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS channels (
     status TEXT NOT NULL DEFAULT 'active',
     shorts_per_week INTEGER NOT NULL DEFAULT 0,
     long_videos_per_week INTEGER NOT NULL DEFAULT 0,
+    voice_name TEXT NOT NULL DEFAULT 'ef_dora',
     created_at TEXT NOT NULL
 );
 """
@@ -49,6 +50,16 @@ CREATE TABLE IF NOT EXISTS scripts (
     FOREIGN KEY (idea_id) REFERENCES ideas (id) ON DELETE CASCADE
 );
 """
+_CREATE_VOICE_TRACKS_TABLE = """
+CREATE TABLE IF NOT EXISTS voice_tracks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    script_id INTEGER NOT NULL,
+    file_path TEXT NOT NULL,
+    voice_name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
+);
+"""
 
 def initialize_database():
     """
@@ -59,6 +70,7 @@ def initialize_database():
         conn.execute(_CREATE_CHANNELS_TABLE)
         conn.execute(_CREATE_IDEAS_TABLE)
         conn.execute(_CREATE_SCRIPTS_TABLE)
+        conn.execute(_CREATE_VOICE_TRACKS_TABLE)
         # Futuras tablas (videos, stats...) se añadirán aquí
         # conn.execute(_CREATE_VIDEOS_TABLE)
 

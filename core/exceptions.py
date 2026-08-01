@@ -25,3 +25,8 @@ class AIProviderError(BaseAppError):
 class APIConnectionError(BaseAppError):
     """Se lanza cuando falla una conexión de red o a una API externa."""
     pass
+
+
+class VoiceProviderError(BaseAppError):
+    """Se lanza cuando un proveedor de voz (Kokoro, etc.) falla al generar audio."""
+    pass

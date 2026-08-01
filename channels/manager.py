@@ -33,7 +33,13 @@ def _validate_channel_data(name: str, topic: str, shorts_per_week: int, long_vid
         )
 
 
-def create_channel(name: str, topic: str, shorts_per_week: int = 0, long_videos_per_week: int = 0) -> Channel:
+def create_channel(
+    name: str,
+    topic: str,
+    shorts_per_week: int = 0,
+    long_videos_per_week: int = 0,
+    voice_name: str = "ef_dora",
+) -> Channel:
     """Crea y guarda un canal nuevo, validando los datos antes."""
     _validate_channel_data(name, topic, shorts_per_week, long_videos_per_week)
 
@@ -42,6 +48,7 @@ def create_channel(name: str, topic: str, shorts_per_week: int = 0, long_videos_
         topic=topic.strip(),
         shorts_per_week=shorts_per_week,
         long_videos_per_week=long_videos_per_week,
+        voice_name=voice_name,
     )
 
     saved_channel = repository.create(channel)
