@@ -15,6 +15,7 @@ class Idea:
     """Representa una idea de vídeo generada para un canal concreto."""
 
     channel_id: int
+    content_type: str  # "short" o "long" (ver core.constants.VALID_CONTENT_TYPES)
     title: str
     summary: str
     used: bool = False

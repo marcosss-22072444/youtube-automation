@@ -14,6 +14,7 @@ from core.ai_providers.base import TextAIProvider
 from core.ai_providers.gemini_provider import GeminiProvider
 from core.exceptions import AIProviderError
 from core.logger import get_logger
+from core.constants import CONTENT_TYPE_SHORT, VALID_CONTENT_TYPES
 
 logger = get_logger(__name__)
 
@@ -25,7 +26,7 @@ _SYSTEM_INSTRUCTION = (
 )
 
 
-def _build_prompt(channel: Channel, previous_titles: list[str]) -> str:
+def _build_prompt(channel: Channel, content_type: str, previous_titles: list[str]) -> str:
     """Construye el prompt pidiendo una idea nueva que no se solape."""
     if previous_titles:
         titulos_previos = "\n".join(f"- {t}" for t in previous_titles)
@@ -36,10 +37,13 @@ def _build_prompt(channel: Channel, previous_titles: list[str]) -> str:
     else:
         contexto = "Este canal todavía no tiene ideas previas.\n\n"
 
+    formato = "un SHORT (vídeo corto, vertical)" if content_type == "short" else "un VÍDEO LARGO"
+
     return (
         f"El canal se llama '{channel.name}' y trata sobre: {channel.topic}.\n\n"
         f"{contexto}"
-        f"Genera UNA idea de vídeo nueva y original para este canal."
+        f"Genera UNA idea de vídeo nueva y original para este canal, "
+        f"pensada específicamente para {formato}."
     )
 
 
@@ -63,16 +67,25 @@ def _parse_ai_response(text: str) -> tuple[str, str]:
     return title, summary
 
 
-def generate_idea_for_channel(channel: Channel, provider: TextAIProvider | None = None) -> Idea:
+def generate_idea_for_channel(
+    channel: Channel,
+    content_type: str = CONTENT_TYPE_SHORT,
+    provider: TextAIProvider | None = None,
+) -> Idea:
     """
-    Genera una idea nueva para el canal dado, evitando repetir temas ya
-    usados, la guarda en la base de datos y la devuelve.
+    Genera una idea nueva para el canal dado y el tipo de contenido
+    indicado, evitando repetir temas ya usados. La guarda y la devuelve.
     """
+    if content_type not in VALID_CONTENT_TYPES:
+        raise IdeaGenerationError(
+            f"content_type inválido: '{content_type}'. Válidos: {VALID_CONTENT_TYPES}"
+        )
+
     if provider is None:
         provider = GeminiProvider()
 
     previous_titles = idea_repository.get_recent_titles_for_context(channel.id)
-    prompt = _build_prompt(channel, previous_titles)
+    prompt = _build_prompt(channel, content_type, previous_titles)
 
     try:
         respuesta = provider.generate(prompt, system_instruction=_SYSTEM_INSTRUCTION)
@@ -81,8 +94,8 @@ def generate_idea_for_channel(channel: Channel, provider: TextAIProvider | None 
 
     title, summary = _parse_ai_response(respuesta)
 
-    idea = Idea(channel_id=channel.id, title=title, summary=summary)
+    idea = Idea(channel_id=channel.id, content_type=content_type, title=title, summary=summary)
     saved_idea = idea_repository.create(idea)
 
-    logger.info(f"Idea generada para canal '{channel.name}': '{saved_idea.title}'")
+    logger.info(f"Idea generada para canal '{channel.name}' ({content_type}): '{saved_idea.title}'")
     return saved_idea

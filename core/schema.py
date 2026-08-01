@@ -30,6 +30,7 @@ _CREATE_IDEAS_TABLE = """
 CREATE TABLE IF NOT EXISTS ideas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     channel_id INTEGER NOT NULL,
+    content_type TEXT NOT NULL DEFAULT 'short',
     title TEXT NOT NULL,
     summary TEXT NOT NULL,
     used INTEGER NOT NULL DEFAULT 0,
@@ -37,7 +38,17 @@ CREATE TABLE IF NOT EXISTS ideas (
     FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
 );
 """
-
+_CREATE_SCRIPTS_TABLE = """
+CREATE TABLE IF NOT EXISTS scripts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    idea_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    word_count INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (idea_id) REFERENCES ideas (id) ON DELETE CASCADE
+);
+"""
 
 def initialize_database():
     """
@@ -47,6 +58,7 @@ def initialize_database():
     with get_connection() as conn:
         conn.execute(_CREATE_CHANNELS_TABLE)
         conn.execute(_CREATE_IDEAS_TABLE)
+        conn.execute(_CREATE_SCRIPTS_TABLE)
         # Futuras tablas (videos, stats...) se añadirán aquí
         # conn.execute(_CREATE_VIDEOS_TABLE)
 

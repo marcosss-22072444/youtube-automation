@@ -18,22 +18,22 @@ def _row_to_idea(row: sqlite3.Row) -> Idea:
     return Idea(
         id=row["id"],
         channel_id=row["channel_id"],
+        content_type=row["content_type"],
         title=row["title"],
         summary=row["summary"],
         used=bool(row["used"]),
         created_at=row["created_at"],
     )
 
-
 def create(idea: Idea) -> Idea:
     """Guarda una idea nueva en la base de datos."""
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO ideas (channel_id, title, summary, used, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO ideas (channel_id, content_type, title, summary, used, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (idea.channel_id, idea.title, idea.summary, int(idea.used), idea.created_at),
+            (idea.channel_id, idea.content_type, idea.title, idea.summary, int(idea.used), idea.created_at),
         )
     idea.id = cursor.lastrowid
     return idea

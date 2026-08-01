@@ -28,3 +28,9 @@ CONFIG_FILE = BASE_DIR / "config.yaml"
 # Valores por defecto (se pueden sobrescribir desde config.yaml)
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_AI_PROVIDER = "gemini"
+# Tipos de contenido válidos para Ideas/Scripts. Añadir aquí un valor
+# nuevo (ej: "live") es el único paso necesario para soportar un
+# formato nuevo en el futuro, sin tocar modelos ni validaciones.
+CONTENT_TYPE_SHORT = "short"
+CONTENT_TYPE_LONG = "long"
+VALID_CONTENT_TYPES = (CONTENT_TYPE_SHORT, CONTENT_TYPE_LONG)

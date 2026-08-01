@@ -9,3 +9,8 @@ log_level: "INFO"
 ai_provider: "gemini"
 gemini_model: "gemini-3.6-flash"
 ideas_context_limit: 50
+narration_wpm: 150
+
+script_duration_seconds:
+  short: 45
+  long: 480
