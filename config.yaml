@@ -13,6 +13,6 @@ narration_wpm: 150
 
 script_duration_seconds:
   short: 45
-  long: 480
+  long: 600
 
 groq_model: "openai/gpt-oss-120b"
