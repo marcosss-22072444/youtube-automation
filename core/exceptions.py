@@ -30,3 +30,8 @@ class APIConnectionError(BaseAppError):
 class VoiceProviderError(BaseAppError):
     """Se lanza cuando un proveedor de voz (Kokoro, etc.) falla al generar audio."""
     pass
+
+
+class ImageProviderError(BaseAppError):
+    """Se lanza cuando un proveedor de imagen (FLUX, etc.) falla al generar una imagen."""
+    pass

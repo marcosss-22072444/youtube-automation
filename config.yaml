@@ -16,3 +16,8 @@ script_duration_seconds:
   long: 600
 
 groq_model: "openai/gpt-oss-120b"
+image_generation:
+  width: 768
+  height: 768
+  num_inference_steps: 20
+  guidance_scale: 7.0

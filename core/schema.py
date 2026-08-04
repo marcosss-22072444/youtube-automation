@@ -60,6 +60,17 @@ CREATE TABLE IF NOT EXISTS voice_tracks (
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );
 """
+_CREATE_VISUALS_TABLE = """
+CREATE TABLE IF NOT EXISTS visuals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    script_id INTEGER NOT NULL,
+    scene_number INTEGER NOT NULL,
+    image_prompt TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
+);
+"""
 
 def initialize_database():
     """
@@ -71,6 +82,7 @@ def initialize_database():
         conn.execute(_CREATE_IDEAS_TABLE)
         conn.execute(_CREATE_SCRIPTS_TABLE)
         conn.execute(_CREATE_VOICE_TRACKS_TABLE)
+        conn.execute(_CREATE_VISUALS_TABLE)
         # Futuras tablas (videos, stats...) se añadirán aquí
         # conn.execute(_CREATE_VIDEOS_TABLE)
 

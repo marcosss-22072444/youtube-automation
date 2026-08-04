@@ -27,6 +27,7 @@ class Settings:
         # --- Secretos desde .env ---
         self.gemini_api_key: str = self._get_required_env("GEMINI_API_KEY")
         self.groq_api_key: str = self._get_required_env("GROQ_API_KEY")
+        self.hf_api_token: str = self._get_required_env("HF_API_TOKEN")
 
         # --- Configuración no sensible desde config.yaml ---
         yaml_config = self._load_yaml_config()
@@ -40,6 +41,11 @@ class Settings:
         self.script_duration_seconds: dict = yaml_config.get(
             "script_duration_seconds", {"short": 45, "long": 480}
         )
+        self.image_generation: dict = yaml_config.get(
+            "image_generation",
+            {"width": 768, "height": 768, "num_inference_steps": 20, "guidance_scale": 7.0},
+        )
+        
 
     @staticmethod
     def _get_required_env(var_name: str) -> str:

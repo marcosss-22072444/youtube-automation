@@ -3,5 +3,8 @@ PyYAML==6.0.2
 google-generativeai==0.8.3
 kokoro>=0.9.4
    soundfile
-   torch
+   torch --index-url https://download.pytorch.org/whl/cu121
 groq
+Pillow
+diffusers
+accelerate
