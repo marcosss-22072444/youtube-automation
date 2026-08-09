@@ -71,6 +71,17 @@ CREATE TABLE IF NOT EXISTS visuals (
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );
 """
+_CREATE_VIDEOS_TABLE = """
+CREATE TABLE IF NOT EXISTS videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    script_id INTEGER NOT NULL,
+    file_path TEXT NOT NULL,
+    srt_path TEXT,
+    duration_seconds REAL NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
+);
+"""
 
 def initialize_database():
     """
@@ -83,7 +94,7 @@ def initialize_database():
         conn.execute(_CREATE_SCRIPTS_TABLE)
         conn.execute(_CREATE_VOICE_TRACKS_TABLE)
         conn.execute(_CREATE_VISUALS_TABLE)
-        # Futuras tablas (videos, stats...) se añadirán aquí
-        # conn.execute(_CREATE_VIDEOS_TABLE)
+        conn.execute(_CREATE_VIDEOS_TABLE)
+        # Futuras tablas (stats...) se añadirán aquí
 
     logger.info("Base de datos inicializada correctamente.")

@@ -12,6 +12,7 @@ import soundfile as sf
 from kokoro import KPipeline
 
 from core.voice_providers.base import VoiceProvider
+from core.config import settings
 from core.exceptions import VoiceProviderError
 from core.logger import get_logger
 
@@ -56,9 +57,17 @@ class KokoroProvider(VoiceProvider):
     def generate(self, text: str, voice_name: str, output_path: Path) -> Path:
         try:
             pipeline = self._get_pipeline(voice_name)
-            generator = pipeline(text, voice=voice_name)
+            speed = settings.voice_naturalness.get("speed", 1.0)
+            generator = pipeline(text, voice=voice_name, speed=speed)
 
-            audio_chunks = [audio for _, _, audio in generator]
+            pause_ms = settings.voice_naturalness.get("pause_between_segments_ms", 0)
+            silence_samples = int(_SAMPLE_RATE * (pause_ms / 1000))
+            silence = np.zeros(silence_samples, dtype=np.float32)
+
+            audio_chunks = []
+            for _, _, audio in generator:
+                audio_chunks.append(audio)
+                audio_chunks.append(silence)
 
             if not audio_chunks:
                 raise VoiceProviderError("Kokoro no generó ningún audio.")

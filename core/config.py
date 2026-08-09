@@ -45,6 +45,28 @@ class Settings:
             "image_generation",
             {"width": 768, "height": 768, "num_inference_steps": 20, "guidance_scale": 7.0},
         )
+        self.voice_naturalness: dict = yaml_config.get(
+            "voice_naturalness", {"speed": 0.95, "pause_between_segments_ms": 200}
+        )
+        self.video: dict = yaml_config.get(
+            "video",
+            {
+                "scene_duration_seconds": 2.0,
+                "ken_burns": {"enabled": True, "zoom_start": 1.0, "zoom_end": 1.15, "pan_enabled": True},
+                "subtitles": {
+                    "enabled": True,
+                    "export_srt": True,
+                    "burn_in": True,
+                    "font_size": 48,
+                    "font_color": "white",
+                    "outline_color": "black",
+                    "outline_width": 2,
+                    "position": "bottom",
+                    "max_lines": 2,
+                    "animation": "none",
+                },
+            },
+        )
         
 
     @staticmethod

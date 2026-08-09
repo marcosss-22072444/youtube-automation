@@ -1,8 +1,7 @@
 """
 main.py
 
-Script de arranque/prueba del Core. Se irá ampliando en módulos
-futuros para lanzar la app real.
+Script de arranque/prueba del Core.
 """
 
 from core.logger import get_logger

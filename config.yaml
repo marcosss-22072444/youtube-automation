@@ -12,7 +12,7 @@ ideas_context_limit: 50
 narration_wpm: 150
 
 script_duration_seconds:
-  short: 45
+  short: 35
   long: 600
 
 groq_model: "openai/gpt-oss-120b"
@@ -21,3 +21,26 @@ image_generation:
   height: 768
   num_inference_steps: 20
   guidance_scale: 7.0
+
+  voice_naturalness:
+  speed: 0.95
+  pause_between_segments_ms: 200
+
+video:
+  scene_duration_seconds: 2.0
+  ken_burns:
+    enabled: true
+    zoom_start: 1.0
+    zoom_end: 1.15
+    pan_enabled: true
+  subtitles:
+    enabled: true
+    export_srt: true
+    burn_in: true
+    font_size: 60
+    font_color: "yellow"
+    outline_color: "black"
+    outline_width: 3
+    position: "bottom"
+    max_lines: 2
+    animation: "none"
