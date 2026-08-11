@@ -94,6 +94,17 @@ CREATE TABLE IF NOT EXISTS thumbnails (
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );
 """
+_CREATE_METADATA_TABLE = """
+CREATE TABLE IF NOT EXISTS metadata (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    script_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    tags TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
+);
+"""
 
 def initialize_database():
     """
@@ -108,5 +119,6 @@ def initialize_database():
         conn.execute(_CREATE_VISUALS_TABLE)
         conn.execute(_CREATE_VIDEOS_TABLE)
         conn.execute(_CREATE_THUMBNAILS_TABLE)
+        conn.execute(_CREATE_METADATA_TABLE)
         # Futuras tablas (stats...) se añadirán aquí
     logger.info("Base de datos inicializada correctamente.")
