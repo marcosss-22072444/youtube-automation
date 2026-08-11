@@ -44,3 +44,41 @@ video:
     position: "bottom"
     max_lines: 2
     animation: "none"
+    media_sources:
+      order: ["pexels", "pixabay", "sdxl"]
+      clip_duration_seconds:
+        min: 1.5
+        max: 2.0
+    avoid_repetition: true
+    candidates_per_search: 5
+text_normalization:
+  use_ai_pass: true
+  unit_expansions:
+    "km/h": "kilómetros por hora"
+    "km": "kilómetros"
+    "kg": "kilogramos"
+    "cm": "centímetros"
+    "mm": "milímetros"
+    "hp": "caballos de fuerza"
+    "mph": "millas por hora"
+    "kmh": "kilómetros por hora"
+media_sources:
+  order: ["pexels", "pixabay", "sdxl"]
+  clip_duration_seconds:
+    min: 1.5
+    max: 2.0
+  avoid_repetition: true
+  candidates_per_search: 5
+  request_delay_seconds:
+    min: 2.0
+    max: 3.0
+thumbnails:
+  width: 1280
+  height: 720
+  font_path: "assets/fonts/Anton-Regular.ttf"
+  font_size: "auto"
+  max_font_size: 140
+  min_font_size: 60
+  font_color: "auto"
+  outline_width: 8
+  max_lines: 3

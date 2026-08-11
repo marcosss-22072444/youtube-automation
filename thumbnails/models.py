@@ -1,8 +1,8 @@
 """
 models.py
 
-Define la estructura de datos de un Visual: una imagen generada para
-una escena concreta de un Script.
+Define la estructura de datos de un Thumbnail: la miniatura generada
+para un Script (vídeo) concreto.
 """
 
 from dataclasses import dataclass
@@ -11,15 +11,12 @@ from typing import Optional
 
 
 @dataclass
-class Visual:
-    """Representa el asset visual (clip de vídeo o imagen) de una escena."""
+class Thumbnail:
+    """Representa la miniatura generada para un guion/vídeo concreto."""
 
     script_id: int
-    scene_number: int
-    image_prompt: str
     file_path: str
-    asset_type: str = "image"  # "video" o "image"
-    source: str = "sdxl"       # "pexels", "pixabay" o "sdxl"
+    title_text: str
     id: Optional[int] = None
     created_at: Optional[str] = None
 

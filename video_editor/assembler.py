@@ -60,38 +60,57 @@ def _build_scene_durations(visuals: list[Visual], audio_duration: float) -> list
     return [(visual, per_scene) for visual in visuals]
 
 
-def _render_scene_segment(image_path: Path, duration: float, output_path: Path) -> None:
-    """Genera un clip de vídeo a partir de una imagen fija, aplicando
-    el efecto Ken Burns (zoom suave) si está activado en config.yaml."""
-    ken_burns = settings.video["ken_burns"]
-    num_frames = max(1, round(duration * _FPS))
-
+def _render_scene_segment(asset_type: str, source_path: Path, duration: float, output_path: Path) -> None:
+    """
+    Genera un clip de vídeo de duración exacta a partir de una escena.
+    Si es una imagen fija, aplica el efecto Ken Burns (zoom suave) si
+    está activado. Si es un clip de vídeo de stock, lo recorta o lo
+    repite en bucle hasta cubrir la duración asignada, sin Ken Burns
+    (el clip ya tiene movimiento propio) y sin su audio original.
+    """
     scale_crop = f"scale={_WIDTH}:{_HEIGHT}:force_original_aspect_ratio=increase,crop={_WIDTH}:{_HEIGHT}"
 
-    if ken_burns.get("enabled", True):
-        zoom_end = ken_burns.get("zoom_end", 1.15)
-        zoompan = (
-            f"zoompan=z='min(zoom+{(zoom_end - 1.0) / num_frames:.6f},{zoom_end})'"
-            f":d={num_frames}:s={_WIDTH}x{_HEIGHT}:fps={_FPS}"
-        )
-        vf = f"{scale_crop},{zoompan}"
-    else:
+    if asset_type == "video":
         vf = f"{scale_crop},fps={_FPS}"
+        command = [
+            "ffmpeg", "-y",
+            "-stream_loop", "-1",
+            "-i", str(source_path),
+            "-vf", vf,
+            "-t", str(duration),
+            "-an",
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ]
+    else:
+        ken_burns = settings.video["ken_burns"]
+        num_frames = max(1, round(duration * _FPS))
 
-    command = [
-        "ffmpeg", "-y",
-        "-loop", "1",
-        "-i", str(image_path),
-        "-vf", vf,
-        "-t", str(duration),
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        str(output_path),
-    ]
+        if ken_burns.get("enabled", True):
+            zoom_end = ken_burns.get("zoom_end", 1.15)
+            zoompan = (
+                f"zoompan=z='min(zoom+{(zoom_end - 1.0) / num_frames:.6f},{zoom_end})'"
+                f":d={num_frames}:s={_WIDTH}x{_HEIGHT}:fps={_FPS}"
+            )
+            vf = f"{scale_crop},{zoompan}"
+        else:
+            vf = f"{scale_crop},fps={_FPS}"
+
+        command = [
+            "ffmpeg", "-y",
+            "-loop", "1",
+            "-i", str(source_path),
+            "-vf", vf,
+            "-t", str(duration),
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ]
 
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
-        raise VideoAssemblyError(f"FFmpeg falló generando escena {image_path.name}: {result.stderr[-800:]}")
+        raise VideoAssemblyError(f"FFmpeg falló generando escena {source_path.name}: {result.stderr[-800:]}")
 
 
 def _concat_segments(segment_paths: list[Path], output_path: Path, temp_dir: Path) -> None:
@@ -177,9 +196,9 @@ def assemble_video(
         segment_paths = []
 
         for index, (visual, duration) in enumerate(scene_plan):
-            image_path = storage.resolve_path(visual.file_path)
+            source_path = storage.resolve_path(visual.file_path)
             segment_path = temp_dir / f"segment_{index:04}.mp4"
-            _render_scene_segment(image_path, duration, segment_path)
+            _render_scene_segment(visual.asset_type, source_path, duration, segment_path)
             segment_paths.append(segment_path)
 
         background_path = temp_dir / "background.mp4"

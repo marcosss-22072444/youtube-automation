@@ -28,6 +28,8 @@ class Settings:
         self.gemini_api_key: str = self._get_required_env("GEMINI_API_KEY")
         self.groq_api_key: str = self._get_required_env("GROQ_API_KEY")
         self.hf_api_token: str = self._get_required_env("HF_API_TOKEN")
+        self.pexels_api_key: str = self._get_required_env("PEXELS_API_KEY")
+        self.pixabay_api_key: str = self._get_required_env("PIXABAY_API_KEY")
 
         # --- Configuración no sensible desde config.yaml ---
         yaml_config = self._load_yaml_config()
@@ -47,6 +49,41 @@ class Settings:
         )
         self.voice_naturalness: dict = yaml_config.get(
             "voice_naturalness", {"speed": 0.95, "pause_between_segments_ms": 200}
+        )
+        self.text_normalization: dict = yaml_config.get(
+            "text_normalization",
+            {
+            "use_ai_pass": True,
+            "unit_expansions": {
+                "km/h": "kilómetros por hora",
+                "km": "kilómetros",
+                "kg": "kilogramos",
+                "cm": "centímetros",
+                "mm": "milímetros",
+                "hp": "caballos de fuerza",
+                "mph": "millas por hora",
+                "kmh": "kilómetros por hora",
+                }
+            },
+        )
+        self.thumbnails: dict = yaml_config.get(
+            "thumbnails",
+            {
+                "width": 1280, "height": 720,
+                "font_path": "assets/fonts/Anton-Regular.ttf",
+                "font_size": "auto", "max_font_size": 140, "min_font_size": 60,
+                "font_color": "auto", "outline_width": 8, "max_lines": 3,
+            },
+        )
+        self.media_sources: dict = yaml_config.get(
+            "media_sources",
+            {
+                "order": ["pexels", "pixabay", "sdxl"],
+                "clip_duration_seconds": {"min": 1.5, "max": 2.0},
+                "avoid_repetition": True,
+                "candidates_per_search": 5,
+                "request_delay_seconds": {"min": 2.5, "max": 3.5},
+            },
         )
         self.video: dict = yaml_config.get(
             "video",

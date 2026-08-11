@@ -18,19 +18,24 @@ def _row_to_visual(row: sqlite3.Row) -> Visual:
         scene_number=row["scene_number"],
         image_prompt=row["image_prompt"],
         file_path=row["file_path"],
+        asset_type=row["asset_type"],
+        source=row["source"],
         created_at=row["created_at"],
     )
 
 
 def create(visual: Visual) -> Visual:
-    """Guarda una imagen generada en la base de datos."""
+    """Guarda un asset visual (clip o imagen) generado en la base de datos."""
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO visuals (script_id, scene_number, image_prompt, file_path, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO visuals (script_id, scene_number, image_prompt, file_path, asset_type, source, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (visual.script_id, visual.scene_number, visual.image_prompt, visual.file_path, visual.created_at),
+            (
+                visual.script_id, visual.scene_number, visual.image_prompt,
+                visual.file_path, visual.asset_type, visual.source, visual.created_at,
+            ),
         )
     visual.id = cursor.lastrowid
     return visual

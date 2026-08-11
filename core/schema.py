@@ -67,6 +67,8 @@ CREATE TABLE IF NOT EXISTS visuals (
     scene_number INTEGER NOT NULL,
     image_prompt TEXT NOT NULL,
     file_path TEXT NOT NULL,
+    asset_type TEXT NOT NULL DEFAULT 'image',
+    source TEXT NOT NULL DEFAULT 'sdxl',
     created_at TEXT NOT NULL,
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );
@@ -78,6 +80,16 @@ CREATE TABLE IF NOT EXISTS videos (
     file_path TEXT NOT NULL,
     srt_path TEXT,
     duration_seconds REAL NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
+);
+"""
+_CREATE_THUMBNAILS_TABLE = """
+CREATE TABLE IF NOT EXISTS thumbnails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    script_id INTEGER NOT NULL,
+    file_path TEXT NOT NULL,
+    title_text TEXT NOT NULL,
     created_at TEXT NOT NULL,
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );
@@ -95,6 +107,6 @@ def initialize_database():
         conn.execute(_CREATE_VOICE_TRACKS_TABLE)
         conn.execute(_CREATE_VISUALS_TABLE)
         conn.execute(_CREATE_VIDEOS_TABLE)
+        conn.execute(_CREATE_THUMBNAILS_TABLE)
         # Futuras tablas (stats...) se añadirán aquí
-
     logger.info("Base de datos inicializada correctamente.")

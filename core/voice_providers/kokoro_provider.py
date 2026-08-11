@@ -12,6 +12,7 @@ import soundfile as sf
 from kokoro import KPipeline
 
 from core.voice_providers.base import VoiceProvider
+from core.voice_providers.text_normalizer import normalize_text_for_tts, normalize_text_for_tts_with_ai
 from core.config import settings
 from core.exceptions import VoiceProviderError
 from core.logger import get_logger
@@ -56,6 +57,8 @@ class KokoroProvider(VoiceProvider):
 
     def generate(self, text: str, voice_name: str, output_path: Path) -> Path:
         try:
+            text = normalize_text_for_tts(text)
+            text = normalize_text_for_tts_with_ai(text)
             pipeline = self._get_pipeline(voice_name)
             speed = settings.voice_naturalness.get("speed", 1.0)
             generator = pipeline(text, voice=voice_name, speed=speed)
