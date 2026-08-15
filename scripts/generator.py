@@ -67,7 +67,10 @@ def generate_script_for_idea(idea: Idea, provider: TextAIProvider | None = None)
 
     word_count = len(content.split())
 
-    script = Script(idea_id=idea.id, content=content.strip(), word_count=word_count)
+    script = Script(
+        idea_id=idea.id, content_type=idea.content_type,
+        content=content.strip(), word_count=word_count,
+    )
     saved_script = script_repository.create(script)
 
     logger.info(

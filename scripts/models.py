@@ -18,6 +18,7 @@ class Script:
     """Representa el guion completo de un vídeo, generado desde una Idea."""
 
     idea_id: int
+    content_type: str
     content: str
     word_count: int
     status: str = STATUS_DRAFT

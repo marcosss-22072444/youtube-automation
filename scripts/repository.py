@@ -16,6 +16,7 @@ def _row_to_script(row: sqlite3.Row) -> Script:
     return Script(
         id=row["id"],
         idea_id=row["idea_id"],
+        content_type=row["content_type"],
         content=row["content"],
         word_count=row["word_count"],
         status=row["status"],
@@ -28,10 +29,13 @@ def create(script: Script) -> Script:
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO scripts (idea_id, content, word_count, status, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO scripts (idea_id, content_type, content, word_count, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (script.idea_id, script.content, script.word_count, script.status, script.created_at),
+            (
+                script.idea_id, script.content_type, script.content,
+                script.word_count, script.status, script.created_at,
+            ),
         )
     script.id = cursor.lastrowid
     return script

@@ -27,7 +27,13 @@ image_generation:
   pause_between_segments_ms: 200
 
 video:
-  scene_duration_seconds: 2.0
+  scene_duration:
+    short:
+      min_seconds: 1.5
+      max_seconds: 2.0
+    long:
+      min_seconds: 4.0
+      max_seconds: 6.0
   ken_burns:
     enabled: true
     zoom_start: 1.0
@@ -64,17 +70,23 @@ text_normalization:
     "kmh": "kilómetros por hora"
 media_sources:
   order: ["pexels", "pixabay", "sdxl"]
-  clip_duration_seconds:
-    min: 1.5
-    max: 2.0
   avoid_repetition: true
   candidates_per_search: 5
   request_delay_seconds:
     min: 2.0
     max: 3.0
+  pause_every_n_scenes: 30
+  pause_seconds:
+    min: 15.0
+    max: 30.0
 thumbnails:
-  width: 1280
-  height: 720
+  dimensions:
+    short:
+      width: 1080
+      height: 1920
+    long:
+      width: 1280
+      height: 720
   font_path: "assets/fonts/Anton-Regular.ttf"
   font_size: "auto"
   max_font_size: 140

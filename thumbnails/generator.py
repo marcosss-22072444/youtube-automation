@@ -74,6 +74,7 @@ def _fit_text(
 
 def generate_thumbnail_for_script(
     script_id: int,
+    content_type: str,
     title: str,
     background_prompt: str,
     image_provider: ImageProvider | None = None,
@@ -90,6 +91,8 @@ def generate_thumbnail_for_script(
 
     config = settings.thumbnails
     font_path = str(BASE_DIR / config["font_path"])
+    dimensions = config["dimensions"][content_type]
+    width, height = dimensions["width"], dimensions["height"]
 
     with tempfile.TemporaryDirectory() as tmp:
         temp_dir = Path(tmp)
@@ -98,7 +101,7 @@ def generate_thumbnail_for_script(
         try:
             image_provider.generate(background_prompt, background_path)
             image = Image.open(background_path).convert("RGB")
-            image = image.resize((config["width"], config["height"]))
+            image = image.resize((width, height))
         except Exception as error:
             raise ThumbnailGenerationError(f"Fallo al generar el fondo de la miniatura: {error}") from error
 
@@ -110,7 +113,7 @@ def generate_thumbnail_for_script(
             text_color = config["font_color"]
             outline_color = config.get("outline_color", "black")
 
-        max_width = int(config["width"] * 0.9)
+        max_width = int(width * 0.9)
         font, lines = _fit_text(
             draw, title, font_path, max_width,
             config["max_lines"], config["max_font_size"], config["min_font_size"],
@@ -118,11 +121,11 @@ def generate_thumbnail_for_script(
 
         line_height = font.getbbox("Ay")[3] + 10
         total_text_height = line_height * len(lines)
-        y = (config["height"] - total_text_height) // 2
+        y = (height - total_text_height) // 2
 
         for line in lines:
             line_width = draw.textlength(line, font=font)
-            x = (config["width"] - line_width) // 2
+            x = (width - line_width) // 2
             draw.text(
                 (x, y), line, font=font, fill=text_color,
                 stroke_width=config["outline_width"], stroke_fill=outline_color,

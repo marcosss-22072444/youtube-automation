@@ -11,6 +11,7 @@ imagen con SDXL local como último recurso.
 from pathlib import Path
 
 from core.media_providers.base import StockClipProvider
+from core.media_providers.exceptions import ProviderUnavailableError
 from core.media_providers.pexels_provider import PexelsProvider
 from core.media_providers.pixabay_provider import PixabayProvider
 from core.image_providers.base import ImageProvider
@@ -41,10 +42,17 @@ class SceneAssetResolver:
         self._clip_providers: list[StockClipProvider] = [
             _PROVIDER_REGISTRY[name]() for name in order if name in _PROVIDER_REGISTRY
         ]
+        # Proveedores marcados como no disponibles durante este vídeo
+        # (ej: bloqueados por rate limit) — no se vuelven a intentar.
+        self._unavailable_providers: set[int] = set()
 
     def resolve(self, query: str, output_path: Path) -> tuple[str, str]:
         """
         Resuelve el asset de una escena y lo guarda en output_path.
+        Si un proveedor de stock falla de forma que indica que está
+        bloqueado (ProviderUnavailableError), se marca como no
+        disponible para el resto de este vídeo y se pasa directamente
+        al siguiente proveedor, sin volver a intentarlo.
 
         Returns:
             (asset_type, source): ("video", "pexels"/"pixabay") o ("image", "sdxl").
@@ -53,7 +61,18 @@ class SceneAssetResolver:
         avoid_repetition = settings.media_sources["avoid_repetition"]
 
         for provider in self._clip_providers:
-            candidates = provider.search(query, candidates_per_search)
+            if id(provider) in self._unavailable_providers:
+                continue
+
+            try:
+                candidates = provider.search(query, candidates_per_search)
+            except ProviderUnavailableError as error:
+                logger.warning(
+                    f"{type(provider).__name__} no disponible, se omite el resto "
+                    f"del vídeo para este proveedor: {error}"
+                )
+                self._unavailable_providers.add(id(provider))
+                continue
 
             if avoid_repetition:
                 fresh = [c for c in candidates if c.id not in self._used_clip_ids]

@@ -17,9 +17,11 @@ DATA_DIR = BASE_DIR / "data"
 LOGS_DIR = BASE_DIR / "logs"
 OUTPUT_DIR = BASE_DIR / "output"
 TEMP_DIR = BASE_DIR / "temp"
+YOUTUBE_TOKENS_DIR = DATA_DIR / "youtube_tokens"
+CLIENT_SECRET_FILE = BASE_DIR / "client_secret.json"
 
 # Nos aseguramos de que estas carpetas existan siempre al arrancar la app
-for directory in (DATA_DIR, LOGS_DIR, OUTPUT_DIR, TEMP_DIR):
+for directory in (DATA_DIR, LOGS_DIR, OUTPUT_DIR, TEMP_DIR, YOUTUBE_TOKENS_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 # Nombre del archivo de configuración no sensible

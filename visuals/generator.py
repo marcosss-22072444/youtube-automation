@@ -92,8 +92,9 @@ def generate_visuals_for_script(
 
     target_scene_count = None
     if audio_duration_seconds:
-        scene_duration = settings.video["scene_duration_seconds"]
-        target_scene_count = max(1, round(audio_duration_seconds / scene_duration))
+        duration_range = settings.video["scene_duration"][script.content_type]
+        mid_scene_duration = (duration_range["min_seconds"] + duration_range["max_seconds"]) / 2
+        target_scene_count = max(1, round(audio_duration_seconds / mid_scene_duration))
 
     scene_queries = _split_script_into_scenes(script.content, text_provider, target_scene_count)
     logger.info(f"Guion {script.id} dividido en {len(scene_queries)} escenas.")
@@ -105,6 +106,8 @@ def generate_visuals_for_script(
         temp_dir = Path(tmp)
 
         delay_range = settings.media_sources["request_delay_seconds"]
+        pause_every = settings.media_sources["pause_every_n_scenes"]
+        pause_range = settings.media_sources["pause_seconds"]
 
         for scene_number, query in enumerate(scene_queries, start=1):
             asset_type, source = resolver.resolve(query, temp_dir / f"scene_{scene_number}_raw")
@@ -133,7 +136,12 @@ def generate_visuals_for_script(
             logger.info(f"Escena {scene_number}/{len(scene_queries)}: {asset_type} de {source} ({key})")
 
             if scene_number < len(scene_queries):
-                delay = random.uniform(delay_range["min"], delay_range["max"])
-                time.sleep(delay)
+                if scene_number % pause_every == 0:
+                    long_pause = random.uniform(pause_range["min"], pause_range["max"])
+                    logger.info(f"Pausa larga de {long_pause:.1f}s tras {scene_number} escenas (evitar bloqueo de API)...")
+                    time.sleep(long_pause)
+                else:
+                    delay = random.uniform(delay_range["min"], delay_range["max"])
+                    time.sleep(delay)
 
     return visuals

@@ -8,3 +8,6 @@ groq
 Pillow
 diffusers
 accelerate
+
+google-auth-oauthlib
+google-auth-httplib2

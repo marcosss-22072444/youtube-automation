@@ -16,3 +16,6 @@ data/
 
 # Archivos de VS Code (configuración local del editor)
 .vscode/
+
+client_secret.json
+data/youtube_tokens/

@@ -10,6 +10,7 @@ from pathlib import Path
 import requests
 
 from core.media_providers.base import StockClipProvider, ClipCandidate
+from core.media_providers.exceptions import ProviderUnavailableError
 from core.config import settings
 from core.exceptions import BaseAppError
 from core.logger import get_logger
@@ -39,6 +40,19 @@ class PixabayProvider(StockClipProvider):
                 },
                 timeout=15,
             )
+        except requests.RequestException as error:
+            logger.warning(f"Pixabay: error de red, se marca como no disponible: {error}")
+            raise ProviderUnavailableError(f"Pixabay no disponible (red): {error}") from error
+
+        if response.status_code == 429:
+            logger.warning("Pixabay: límite de peticiones alcanzado (429), se marca como no disponible.")
+            raise ProviderUnavailableError("Pixabay devolvió 429 (rate limit).")
+
+        if response.status_code >= 500:
+            logger.warning(f"Pixabay: error del servidor ({response.status_code}), se marca como no disponible.")
+            raise ProviderUnavailableError(f"Pixabay devolvió {response.status_code}.")
+
+        try:
             response.raise_for_status()
             data = response.json()
         except Exception as error:

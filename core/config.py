@@ -69,7 +69,10 @@ class Settings:
         self.thumbnails: dict = yaml_config.get(
             "thumbnails",
             {
-                "width": 1280, "height": 720,
+                "dimensions": {
+                    "short": {"width": 1080, "height": 1920},
+                    "long": {"width": 1280, "height": 720},
+                },
                 "font_path": "assets/fonts/Anton-Regular.ttf",
                 "font_size": "auto", "max_font_size": 140, "min_font_size": 60,
                 "font_color": "auto", "outline_width": 8, "max_lines": 3,
@@ -79,16 +82,20 @@ class Settings:
             "media_sources",
             {
                 "order": ["pexels", "pixabay", "sdxl"],
-                "clip_duration_seconds": {"min": 1.5, "max": 2.0},
                 "avoid_repetition": True,
                 "candidates_per_search": 5,
-                "request_delay_seconds": {"min": 2.5, "max": 3.5},
+                "request_delay_seconds": {"min": 2.0, "max": 3.0},
+                "pause_every_n_scenes": 30,
+                "pause_seconds": {"min": 15.0, "max": 30.0},
             },
         )
         self.video: dict = yaml_config.get(
             "video",
             {
-                "scene_duration_seconds": 2.0,
+                "scene_duration": {
+                    "short": {"min_seconds": 1.5, "max_seconds": 2.0},
+                    "long": {"min_seconds": 4.0, "max_seconds": 6.0},
+                },
                 "ken_burns": {"enabled": True, "zoom_start": 1.0, "zoom_end": 1.15, "pan_enabled": True},
                 "subtitles": {
                     "enabled": True,

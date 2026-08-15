@@ -43,6 +43,7 @@ _CREATE_SCRIPTS_TABLE = """
 CREATE TABLE IF NOT EXISTS scripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     idea_id INTEGER NOT NULL,
+    content_type TEXT NOT NULL DEFAULT 'short',
     content TEXT NOT NULL,
     word_count INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
@@ -105,6 +106,19 @@ CREATE TABLE IF NOT EXISTS metadata (
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );
 """
+_CREATE_UPLOADED_VIDEOS_TABLE = """
+CREATE TABLE IF NOT EXISTS uploaded_videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    script_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    youtube_video_id TEXT NOT NULL,
+    privacy_status TEXT NOT NULL,
+    thumbnail_uploaded INTEGER NOT NULL DEFAULT 0,
+    uploaded_at TEXT NOT NULL,
+    FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+"""
 
 def initialize_database():
     """
@@ -120,5 +134,6 @@ def initialize_database():
         conn.execute(_CREATE_VIDEOS_TABLE)
         conn.execute(_CREATE_THUMBNAILS_TABLE)
         conn.execute(_CREATE_METADATA_TABLE)
+        conn.execute(_CREATE_UPLOADED_VIDEOS_TABLE)
         # Futuras tablas (stats...) se añadirán aquí
     logger.info("Base de datos inicializada correctamente.")
