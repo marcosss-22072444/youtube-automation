@@ -28,8 +28,8 @@ class PexelsProviderError(BaseAppError):
 class PexelsProvider(StockClipProvider):
     """Proveedor de vídeos de stock usando la API de Pexels."""
 
-    def __init__(self):
-        self._headers = {"Authorization": settings.pexels_api_key}
+    def __init__(self, api_key: str | None = None):
+        self._headers = {"Authorization": api_key or settings.pexels_api_key}
 
     def search(self, query: str, max_results: int) -> list[ClipCandidate]:
         try:

@@ -15,11 +15,12 @@ import time
 from pathlib import Path
 
 from scripts.models import Script
+from ideas import repository as idea_repository
 from visuals import repository as visual_repository
 from visuals.models import Visual
 from visuals.exceptions import SceneSplittingError
 from core.ai_providers.base import TextAIProvider
-from core.ai_providers.factory import get_default_text_provider
+from core.ai_providers.factory import get_text_provider_for_channel
 from core.media_providers.scene_asset_resolver import SceneAssetResolver
 from core.storage.base import StorageBackend
 from core.storage.factory import get_default_storage
@@ -77,6 +78,7 @@ def _split_script_into_scenes(
 def generate_visuals_for_script(
     script: Script,
     audio_duration_seconds: float | None = None,
+    channel_id: int | None = None,
     text_provider: TextAIProvider | None = None,
     storage: StorageBackend | None = None,
 ) -> list[Visual]:
@@ -85,8 +87,12 @@ def generate_visuals_for_script(
     (clip de stock, o imagen SDXL como fallback), publicándolos en el
     almacenamiento configurado y registrándolos en la base de datos.
     """
+    if channel_id is None:
+        idea = idea_repository.get_by_id(script.idea_id)
+        channel_id = idea.channel_id
+
     if text_provider is None:
-        text_provider = get_default_text_provider()
+        text_provider = get_text_provider_for_channel(channel_id)
     if storage is None:
         storage = get_default_storage()
 
@@ -99,7 +105,7 @@ def generate_visuals_for_script(
     scene_queries = _split_script_into_scenes(script.content, text_provider, target_scene_count)
     logger.info(f"Guion {script.id} dividido en {len(scene_queries)} escenas.")
 
-    resolver = SceneAssetResolver()
+    resolver = SceneAssetResolver(channel_id=channel_id)
     visuals = []
 
     with tempfile.TemporaryDirectory() as tmp:

@@ -66,6 +66,18 @@ class Settings:
                 }
             },
         )
+        self.scheduler: dict = yaml_config.get(
+            "scheduler",
+            {
+                "timezone": "Europe/Madrid",
+                "check_interval_seconds": 60,
+                "default_privacy_status": "private",
+                "worker_count": 1,
+            },
+        )
+        self.credentials: dict = yaml_config.get(
+            "credentials", {"allow_global_fallback": True}
+        )
         self.thumbnails: dict = yaml_config.get(
             "thumbnails",
             {

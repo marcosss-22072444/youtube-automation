@@ -14,6 +14,8 @@ from core.media_providers.base import StockClipProvider
 from core.media_providers.exceptions import ProviderUnavailableError
 from core.media_providers.pexels_provider import PexelsProvider
 from core.media_providers.pixabay_provider import PixabayProvider
+from core.credentials.base import resolve_credential
+from core.credentials.factory import get_default_credentials_store
 from core.image_providers.base import ImageProvider
 from core.image_providers.factory import get_default_image_provider
 from core.config import settings
@@ -34,14 +36,24 @@ class SceneAssetResolver:
     recurso.
     """
 
-    def __init__(self, image_provider: ImageProvider | None = None):
+    def __init__(self, channel_id: int, image_provider: ImageProvider | None = None):
         self._image_provider = image_provider or get_default_image_provider()
         self._used_clip_ids: set[str] = set()
 
+        store = get_default_credentials_store()
         order = settings.media_sources["order"]
-        self._clip_providers: list[StockClipProvider] = [
-            _PROVIDER_REGISTRY[name]() for name in order if name in _PROVIDER_REGISTRY
-        ]
+
+        self._clip_providers: list[StockClipProvider] = []
+        for name in order:
+            if name not in _PROVIDER_REGISTRY:
+                continue
+            if name == "pexels":
+                api_key = resolve_credential(channel_id, "pexels", settings.pexels_api_key, store)
+                self._clip_providers.append(PexelsProvider(api_key=api_key))
+            elif name == "pixabay":
+                api_key = resolve_credential(channel_id, "pixabay", settings.pixabay_api_key, store)
+                self._clip_providers.append(PixabayProvider(api_key=api_key))
+
         # Proveedores marcados como no disponibles durante este vídeo
         # (ej: bloqueados por rate limit) — no se vuelven a intentar.
         self._unavailable_providers: set[int] = set()

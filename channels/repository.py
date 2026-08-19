@@ -24,6 +24,7 @@ def _row_to_channel(row: sqlite3.Row) -> Channel:
         shorts_per_week=row["shorts_per_week"],
         long_videos_per_week=row["long_videos_per_week"],
         voice_name=row["voice_name"],
+        timezone=row["timezone"],
         created_at=row["created_at"],
     )
 
@@ -35,8 +36,8 @@ def create(channel: Channel) -> Channel:
             cursor = conn.execute(
                 """
                 INSERT INTO channels
-                    (name, topic, status, shorts_per_week, long_videos_per_week, voice_name, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (name, topic, status, shorts_per_week, long_videos_per_week, voice_name, timezone, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     channel.name,
@@ -45,6 +46,7 @@ def create(channel: Channel) -> Channel:
                     channel.shorts_per_week,
                     channel.long_videos_per_week,
                     channel.voice_name,
+                    channel.timezone,
                     channel.created_at,
                 ),
             )
@@ -84,7 +86,7 @@ def update(channel: Channel) -> Channel:
             """
             UPDATE channels
             SET name = ?, topic = ?, status = ?,
-                shorts_per_week = ?, long_videos_per_week = ?, voice_name = ?
+                shorts_per_week = ?, long_videos_per_week = ?, voice_name = ?, timezone = ?
             WHERE id = ?
             """,
             (
@@ -94,11 +96,11 @@ def update(channel: Channel) -> Channel:
                 channel.shorts_per_week,
                 channel.long_videos_per_week,
                 channel.voice_name,
+                channel.timezone,
                 channel.id,
             ),
         )
     return channel
-
 
 def delete(channel_id: int) -> None:
     """Elimina un canal por su id."""

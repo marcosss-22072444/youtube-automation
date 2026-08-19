@@ -11,7 +11,7 @@ from metadata import repository as metadata_repository
 from metadata.models import Metadata
 from metadata.exceptions import MetadataGenerationError
 from core.ai_providers.base import TextAIProvider
-from core.ai_providers.factory import get_default_text_provider
+from core.ai_providers.factory import get_text_provider_for_channel
 from core.exceptions import AIProviderError
 from core.logger import get_logger
 
@@ -83,7 +83,7 @@ def generate_metadata_for_script(
     guarda en la base de datos.
     """
     if provider is None:
-        provider = get_default_text_provider()
+        provider = get_text_provider_for_channel(channel.id)
 
     prompt = _build_prompt(script, channel)
 

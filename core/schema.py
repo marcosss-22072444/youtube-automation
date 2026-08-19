@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS channels (
     shorts_per_week INTEGER NOT NULL DEFAULT 0,
     long_videos_per_week INTEGER NOT NULL DEFAULT 0,
     voice_name TEXT NOT NULL DEFAULT 'ef_dora',
+    timezone TEXT,
     created_at TEXT NOT NULL
 );
 """
@@ -120,6 +121,35 @@ CREATE TABLE IF NOT EXISTS uploaded_videos (
 );
 """
 
+_CREATE_CHANNEL_SCHEDULES_TABLE = """
+CREATE TABLE IF NOT EXISTS channel_schedules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel_id INTEGER NOT NULL,
+    content_type TEXT NOT NULL,
+    day_of_week INTEGER NOT NULL,
+    time_of_day TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+"""
+
+_CREATE_SCHEDULE_RUNS_TABLE = """
+CREATE TABLE IF NOT EXISTS schedule_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    schedule_entry_id INTEGER NOT NULL,
+    run_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    uploaded_video_id INTEGER,
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (schedule_entry_id) REFERENCES channel_schedules (id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_video_id) REFERENCES uploaded_videos (id) ON DELETE SET NULL,
+    UNIQUE (schedule_entry_id, run_date)
+);
+"""
+
 def initialize_database():
     """
     Crea todas las tablas del proyecto si no existen todavía.
@@ -135,5 +165,7 @@ def initialize_database():
         conn.execute(_CREATE_THUMBNAILS_TABLE)
         conn.execute(_CREATE_METADATA_TABLE)
         conn.execute(_CREATE_UPLOADED_VIDEOS_TABLE)
+        conn.execute(_CREATE_CHANNEL_SCHEDULES_TABLE)
+        conn.execute(_CREATE_SCHEDULE_RUNS_TABLE)
         # Futuras tablas (stats...) se añadirán aquí
     logger.info("Base de datos inicializada correctamente.")

@@ -15,6 +15,7 @@ from core.ai_providers.factory import get_default_text_provider
 from core.exceptions import AIProviderError
 from core.logger import get_logger
 from core.constants import CONTENT_TYPE_SHORT, VALID_CONTENT_TYPES
+from core.ai_providers.factory import get_text_provider_for_channel
 
 logger = get_logger(__name__)
 
@@ -82,7 +83,7 @@ def generate_idea_for_channel(
         )
 
     if provider is None:
-        provider = get_default_text_provider()
+        provider = get_text_provider_for_channel(channel.id)
 
     previous_titles = idea_repository.get_recent_titles_for_context(channel.id)
     prompt = _build_prompt(channel, content_type, previous_titles)

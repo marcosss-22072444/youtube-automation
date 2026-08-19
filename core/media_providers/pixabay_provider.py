@@ -28,12 +28,15 @@ class PixabayProviderError(BaseAppError):
 class PixabayProvider(StockClipProvider):
     """Proveedor de vídeos de stock usando la API de Pixabay."""
 
+    def __init__(self, api_key: str | None = None):
+        self._api_key = api_key or settings.pixabay_api_key
+
     def search(self, query: str, max_results: int) -> list[ClipCandidate]:
         try:
             response = requests.get(
                 _SEARCH_URL,
                 params={
-                    "key": settings.pixabay_api_key,
+                    "key": self._api_key,
                     "q": query,
                     "per_page": max_results,
                     "video_type": "film",

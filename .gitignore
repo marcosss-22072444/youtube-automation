@@ -19,3 +19,6 @@ data/
 
 client_secret.json
 data/youtube_tokens/
+
+data/channel_credentials/
+data/.credentials_key

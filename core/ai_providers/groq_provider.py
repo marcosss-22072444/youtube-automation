@@ -18,9 +18,9 @@ logger = get_logger(__name__)
 class GroqProvider(TextAIProvider):
     """Proveedor de IA de texto usando modelos alojados en Groq."""
 
-    def __init__(self, model_name: str | None = None):
+    def __init__(self, api_key: str | None = None, model_name: str | None = None):
         self.model_name = model_name or settings.groq_model
-        self._client = Groq(api_key=settings.groq_api_key)
+        self._client = Groq(api_key=api_key or settings.groq_api_key)
 
     def generate(self, prompt: str, system_instruction: str | None = None) -> str:
         messages = []

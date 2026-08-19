@@ -18,10 +18,10 @@ logger = get_logger(__name__)
 class GeminiProvider(TextAIProvider):
     """Proveedor de IA de texto usando el modelo Gemini de Google."""
 
-    def __init__(self, model_name: str | None = None):
-       genai.configure(api_key=settings.gemini_api_key)
-       self.model_name = model_name or settings.gemini_model
-       self._model = genai.GenerativeModel(self.model_name)
+    def __init__(self, api_key: str | None = None, model_name: str | None = None):
+        genai.configure(api_key=api_key or settings.gemini_api_key)
+        self.model_name = model_name or settings.gemini_model
+        self._model = genai.GenerativeModel(self.model_name)
 
     def generate(self, prompt: str, system_instruction: str | None = None) -> str:
         try:

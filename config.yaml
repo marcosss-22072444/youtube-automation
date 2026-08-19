@@ -94,3 +94,10 @@ thumbnails:
   font_color: "auto"
   outline_width: 8
   max_lines: 3
+credentials:
+  allow_global_fallback: true
+scheduler:
+  timezone: "Europe/Madrid"
+  check_interval_seconds: 60
+  default_privacy_status: "private"
+  worker_count: 1

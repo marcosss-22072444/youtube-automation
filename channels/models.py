@@ -21,6 +21,7 @@ class Channel:
     long_videos_per_week: int = 0
     status: str = "active"
     voice_name: str = "ef_dora"
+    timezone: Optional[str] = None  # None = usa la zona horaria global del Scheduler
     id: Optional[int] = None
     created_at: Optional[str] = None
 
