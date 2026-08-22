@@ -150,6 +150,21 @@ CREATE TABLE IF NOT EXISTS schedule_runs (
 );
 """
 
+_CREATE_VIDEO_STATS_TABLE = """
+CREATE TABLE IF NOT EXISTS video_stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uploaded_video_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    view_count INTEGER NOT NULL,
+    like_count INTEGER NOT NULL,
+    comment_count INTEGER NOT NULL,
+    subscriber_count INTEGER NOT NULL,
+    collected_at TEXT NOT NULL,
+    FOREIGN KEY (uploaded_video_id) REFERENCES uploaded_videos (id) ON DELETE CASCADE,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+"""
+
 def initialize_database():
     """
     Crea todas las tablas del proyecto si no existen todavía.
@@ -167,5 +182,5 @@ def initialize_database():
         conn.execute(_CREATE_UPLOADED_VIDEOS_TABLE)
         conn.execute(_CREATE_CHANNEL_SCHEDULES_TABLE)
         conn.execute(_CREATE_SCHEDULE_RUNS_TABLE)
-        # Futuras tablas (stats...) se añadirán aquí
+        conn.execute(_CREATE_VIDEO_STATS_TABLE)
     logger.info("Base de datos inicializada correctamente.")
