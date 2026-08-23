@@ -48,6 +48,8 @@ class ScheduleRun:
     status: str = STATUS_QUEUED
     uploaded_video_id: Optional[int] = None
     error_message: Optional[str] = None
+    retry_count: int = 0
+    next_retry_at: Optional[str] = None
     id: Optional[int] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

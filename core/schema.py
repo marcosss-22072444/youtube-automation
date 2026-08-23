@@ -142,6 +142,8 @@ CREATE TABLE IF NOT EXISTS schedule_runs (
     status TEXT NOT NULL DEFAULT 'queued',
     uploaded_video_id INTEGER,
     error_message TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    next_retry_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (schedule_entry_id) REFERENCES channel_schedules (id) ON DELETE CASCADE,

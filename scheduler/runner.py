@@ -18,6 +18,7 @@ from scheduler import repository as schedule_repository
 from scheduler.job_queue import enqueue, dequeue
 from scheduler.models import Job
 from scheduler.pipeline_executor import execute_job
+from error_handler.retry_manager import check_and_requeue_failed_runs
 from core.config import settings
 from core.logger import get_logger
 
@@ -70,6 +71,7 @@ def _detector_loop() -> None:
     while not _stop_event.is_set():
         try:
             _detect_and_enqueue_due_entries()
+            check_and_requeue_failed_runs()
         except Exception as error:
             logger.error(f"Error en el ciclo de detección de horarios: {error}")
 

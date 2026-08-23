@@ -33,10 +33,11 @@ def _row_to_run(row: sqlite3.Row) -> ScheduleRun:
         status=row["status"],
         uploaded_video_id=row["uploaded_video_id"],
         error_message=row["error_message"],
+        retry_count=row["retry_count"],
+        next_retry_at=row["next_retry_at"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
-
 
 # --- ScheduleEntry ---
 
@@ -79,6 +80,11 @@ def list_all_enabled_entries() -> list[ScheduleEntry]:
         ).fetchall()
     return [_row_to_entry(row) for row in rows]
 
+def get_entry_by_id(entry_id: int) -> ScheduleEntry | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM channel_schedules WHERE id = ?", (entry_id,)).fetchone()
+    return _row_to_entry(row) if row else None
+
 
 # --- ScheduleRun / idempotencia ---
 
@@ -119,4 +125,42 @@ def update_run_status(
             WHERE id = ?
             """,
             (status, uploaded_video_id, error_message, datetime.now().isoformat(), run_id),
+        )
+
+
+def list_failed_runs() -> list[ScheduleRun]:
+    """Todos los schedule_runs en estado 'failed' (candidatos a reintento)."""
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM schedule_runs WHERE status = 'failed'").fetchall()
+    return [_row_to_run(row) for row in rows]
+
+
+def schedule_next_retry(run_id: int, next_retry_at: str) -> None:
+    """Fija cuándo debe reintentarse un run fallido, sin cambiar su estado todavía."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE schedule_runs SET next_retry_at = ?, updated_at = ? WHERE id = ?",
+            (next_retry_at, datetime.now().isoformat(), run_id),
+        )
+
+
+def mark_exhausted(run_id: int, max_retries: int) -> None:
+    """Marca un run como sin más reintentos disponibles (error permanente o límite alcanzado)."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE schedule_runs SET retry_count = ?, updated_at = ? WHERE id = ?",
+            (max_retries, datetime.now().isoformat(), run_id),
+        )
+
+
+def requeue_for_retry(run_id: int, new_retry_count: int) -> None:
+    """Reencola un run fallido: incrementa su contador de reintentos y lo vuelve a poner 'queued'."""
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE schedule_runs
+            SET status = 'queued', retry_count = ?, next_retry_at = NULL, updated_at = ?
+            WHERE id = ?
+            """,
+            (new_retry_count, datetime.now().isoformat(), run_id),
         )

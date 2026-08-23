@@ -75,6 +75,10 @@ class Settings:
                 "worker_count": 1,
             },
         )
+        self.error_handler: dict = yaml_config.get(
+            "error_handler",
+            {"max_retries": 3, "base_retry_delay_seconds": 60, "max_retry_delay_seconds": 900},
+        )
         self.credentials: dict = yaml_config.get(
             "credentials", {"allow_global_fallback": True}
         )

@@ -3,11 +3,9 @@
 # Los secretos (API keys, tokens) van en .env, nunca aquí.
 
 log_level: "INFO"
-
-ai_provider: "gemini"   # Proveedor de IA de texto activo (más adelante podremos cambiarlo aquí)
-log_level: "INFO"
 ai_provider: "gemini"
 gemini_model: "gemini-3.6-flash"
+groq_model: "openai/gpt-oss-120b"
 ideas_context_limit: 50
 narration_wpm: 150
 
@@ -15,14 +13,13 @@ script_duration_seconds:
   short: 35
   long: 600
 
-groq_model: "openai/gpt-oss-120b"
 image_generation:
   width: 768
   height: 768
   num_inference_steps: 20
   guidance_scale: 7.0
 
-  voice_naturalness:
+voice_naturalness:
   speed: 0.95
   pause_between_segments_ms: 200
 
@@ -50,13 +47,7 @@ video:
     position: "bottom"
     max_lines: 2
     animation: "none"
-    media_sources:
-      order: ["pexels", "pixabay", "sdxl"]
-      clip_duration_seconds:
-        min: 1.5
-        max: 2.0
-    avoid_repetition: true
-    candidates_per_search: 5
+
 text_normalization:
   use_ai_pass: true
   unit_expansions:
@@ -68,6 +59,7 @@ text_normalization:
     "hp": "caballos de fuerza"
     "mph": "millas por hora"
     "kmh": "kilómetros por hora"
+
 media_sources:
   order: ["pexels", "pixabay", "sdxl"]
   avoid_repetition: true
@@ -79,6 +71,7 @@ media_sources:
   pause_seconds:
     min: 15.0
     max: 30.0
+
 thumbnails:
   dimensions:
     short:
@@ -94,10 +87,17 @@ thumbnails:
   font_color: "auto"
   outline_width: 8
   max_lines: 3
+
 credentials:
   allow_global_fallback: true
+
 scheduler:
   timezone: "Europe/Madrid"
   check_interval_seconds: 60
   default_privacy_status: "private"
   worker_count: 1
+
+error_handler:
+  max_retries: 3
+  base_retry_delay_seconds: 60
+  max_retry_delay_seconds: 900
