@@ -15,6 +15,7 @@ from core.ai_providers.factory import get_text_provider_for_channel
 from core.config import settings
 from core.exceptions import AIProviderError
 from core.logger import get_logger
+from research.models import ResearchResult
 
 logger = get_logger(__name__)
 
@@ -37,16 +38,30 @@ def _calculate_target_words(content_type: str) -> int:
     return round((duration_seconds / 60) * settings.narration_wpm)
 
 
-def _build_prompt(idea: Idea, target_words: int) -> str:
-    return (
+def _build_prompt(idea: Idea, target_words: int, research_result: ResearchResult | None) -> str:
+    base = (
         f"Título del vídeo: {idea.title}\n"
         f"Resumen: {idea.summary}\n\n"
+    )
+
+    if research_result and research_result.verified_facts:
+        hechos = "\n".join(f"- {f.claim}" for f in research_result.verified_facts)
+        base += (
+            f"Estos son los ÚNICOS hechos concretos verificados que puedes usar "
+            f"como datos reales (cifras, especificaciones, fechas). NO inventes "
+            f"ninguna cifra que no esté aquí; si necesitas mencionar algo no "
+            f"listado, hazlo de forma general sin inventar el número:\n{hechos}\n\n"
+        )
+
+    base += (
         f"Escribe el guion completo de este vídeo, en aproximadamente "
         f"{target_words} palabras."
     )
+    return base
 
-
-def generate_script_for_idea(idea: Idea, provider: TextAIProvider | None = None) -> Script:
+def generate_script_for_idea(
+    idea: Idea, research_result: ResearchResult | None = None, provider: TextAIProvider | None = None
+) -> Script:
     """
     Genera el guion completo de una idea, calculando la longitud según
     la duración configurada para su content_type, y lo guarda.
@@ -55,7 +70,7 @@ def generate_script_for_idea(idea: Idea, provider: TextAIProvider | None = None)
         provider = get_text_provider_for_channel(idea.channel_id)
 
     target_words = _calculate_target_words(idea.content_type)
-    prompt = _build_prompt(idea, target_words)
+    prompt = _build_prompt(idea, target_words, research_result)
 
     try:
         content = provider.generate(prompt, system_instruction=_SYSTEM_INSTRUCTION)

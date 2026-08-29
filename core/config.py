@@ -30,6 +30,7 @@ class Settings:
         self.hf_api_token: str = self._get_required_env("HF_API_TOKEN")
         self.pexels_api_key: str = self._get_required_env("PEXELS_API_KEY")
         self.pixabay_api_key: str = self._get_required_env("PIXABAY_API_KEY")
+        self.tavily_api_key: str = self._get_required_env("TAVILY_API_KEY")
 
         # --- Configuración no sensible desde config.yaml ---
         yaml_config = self._load_yaml_config()
@@ -78,6 +79,22 @@ class Settings:
         self.error_handler: dict = yaml_config.get(
             "error_handler",
             {"max_retries": 3, "base_retry_delay_seconds": 60, "max_retry_delay_seconds": 900},
+        )
+        self.research: dict = yaml_config.get(
+            "research",
+            {
+                "enabled": True,
+                "fail_if_no_evidence": False,
+                "min_sources_required": 2,
+                "confidence_threshold": 0.6,
+                "max_search_queries_per_idea": 4,
+                "candidates_per_search": 5,
+                "default_instructions": (
+                    "Investiga hechos concretos, cifras y especificaciones relevantes "
+                    "para el tema del vídeo. Prioriza fuentes oficiales y medios "
+                    "especializados. Ignora contenido promocional o no verificable."
+                ),
+            },
         )
         self.credentials: dict = yaml_config.get(
             "credentials", {"allow_global_fallback": True}

@@ -167,6 +167,56 @@ CREATE TABLE IF NOT EXISTS video_stats (
 );
 """
 
+_CREATE_RESEARCH_RUNS_TABLE = """
+CREATE TABLE IF NOT EXISTS research_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    idea_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'completed',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (idea_id) REFERENCES ideas (id) ON DELETE CASCADE,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+"""
+
+_CREATE_RESEARCH_SOURCES_TABLE = """
+CREATE TABLE IF NOT EXISTS research_sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    research_run_id INTEGER NOT NULL,
+    url TEXT NOT NULL,
+    title TEXT,
+    source_type TEXT NOT NULL,
+    reliability_score REAL NOT NULL,
+    raw_content TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (research_run_id) REFERENCES research_runs (id) ON DELETE CASCADE
+);
+"""
+
+_CREATE_RESEARCH_FACTS_TABLE = """
+CREATE TABLE IF NOT EXISTS research_facts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    research_run_id INTEGER NOT NULL,
+    claim TEXT NOT NULL,
+    status TEXT NOT NULL,
+    confidence_score REAL NOT NULL,
+    source_ids TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (research_run_id) REFERENCES research_runs (id) ON DELETE CASCADE
+);
+"""
+
+_CREATE_CHANNEL_RESEARCH_CONFIG_TABLE = """
+CREATE TABLE IF NOT EXISTS channel_research_config (
+    channel_id INTEGER PRIMARY KEY,
+    instructions TEXT,
+    min_sources_required INTEGER,
+    confidence_threshold REAL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+"""
+
 def initialize_database():
     """
     Crea todas las tablas del proyecto si no existen todavía.
@@ -185,4 +235,8 @@ def initialize_database():
         conn.execute(_CREATE_CHANNEL_SCHEDULES_TABLE)
         conn.execute(_CREATE_SCHEDULE_RUNS_TABLE)
         conn.execute(_CREATE_VIDEO_STATS_TABLE)
+        conn.execute(_CREATE_RESEARCH_RUNS_TABLE)
+        conn.execute(_CREATE_RESEARCH_SOURCES_TABLE)
+        conn.execute(_CREATE_RESEARCH_FACTS_TABLE)
+        conn.execute(_CREATE_CHANNEL_RESEARCH_CONFIG_TABLE)
     logger.info("Base de datos inicializada correctamente.")

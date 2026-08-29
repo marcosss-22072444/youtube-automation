@@ -24,6 +24,7 @@ from scheduler import repository as schedule_repository
 from scheduler.models import Job, STATUS_RUNNING, STATUS_SUCCESS, STATUS_FAILED
 from scheduler.exceptions import PipelineExecutionError
 from core.logger import get_logger
+from research.manager import research_idea
 
 logger = get_logger(__name__)
 
@@ -47,7 +48,13 @@ def execute_job(job: Job) -> None:
         idea = generate_idea_for_channel(canal, content_type=job.content_type)
         logger.info(f"{log_prefix} Idea: {idea.title}")
 
-        script = generate_script_for_idea(idea)
+        research_result = research_idea(idea, canal)
+        logger.info(
+            f"{log_prefix} Research: {len(research_result.sources)} fuentes, "
+            f"{len(research_result.verified_facts)} hechos verificados (status={research_result.status})"
+        )
+
+        script = generate_script_for_idea(idea, research_result=research_result)
         logger.info(f"{log_prefix} Guion: {script.id}")
 
         voice_track = generate_voice_for_script(script, canal)

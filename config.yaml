@@ -101,3 +101,15 @@ error_handler:
   max_retries: 3
   base_retry_delay_seconds: 60
   max_retry_delay_seconds: 900
+
+research:
+  enabled: true
+  fail_if_no_evidence: false
+  min_sources_required: 2
+  confidence_threshold: 0.6
+  max_search_queries_per_idea: 4
+  candidates_per_search: 5
+  default_instructions: >
+    Investiga hechos concretos, cifras y especificaciones relevantes
+    para el tema del vídeo. Prioriza fuentes oficiales y medios
+    especializados. Ignora contenido promocional o no verificable.
