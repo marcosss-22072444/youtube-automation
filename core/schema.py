@@ -217,6 +217,18 @@ CREATE TABLE IF NOT EXISTS channel_research_config (
 );
 """
 
+_CREATE_CHANNEL_SETTINGS_TABLE = """
+CREATE TABLE IF NOT EXISTS channel_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel_id INTEGER NOT NULL,
+    setting_key TEXT NOT NULL,
+    setting_value TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE,
+    UNIQUE (channel_id, setting_key)
+);
+"""
+
 def initialize_database():
     """
     Crea todas las tablas del proyecto si no existen todavía.
@@ -239,4 +251,5 @@ def initialize_database():
         conn.execute(_CREATE_RESEARCH_SOURCES_TABLE)
         conn.execute(_CREATE_RESEARCH_FACTS_TABLE)
         conn.execute(_CREATE_CHANNEL_RESEARCH_CONFIG_TABLE)
+        conn.execute(_CREATE_CHANNEL_SETTINGS_TABLE)
     logger.info("Base de datos inicializada correctamente.")
