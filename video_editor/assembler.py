@@ -23,6 +23,8 @@ from core.storage.base import StorageBackend
 from core.storage.factory import get_default_storage
 from core.config import settings
 from core.logger import get_logger
+from ideas import repository as idea_repository
+from channel_settings import manager as settings_manager
 
 import subprocess
 
@@ -171,6 +173,7 @@ def assemble_video(
     script: Script,
     visuals: list[Visual],
     voice_track: VoiceTrack,
+    channel_id: int | None = None,
     storage: StorageBackend | None = None,
 ) -> Video:
     """
@@ -180,6 +183,19 @@ def assemble_video(
     """
     if storage is None:
         storage = get_default_storage()
+
+    if channel_id is None:
+        idea = idea_repository.get_by_id(script.idea_id)
+        channel_id = idea.channel_id
+
+    global_sub_config = settings.video["subtitles"]
+    subtitle_config = {
+        key: settings_manager.get_setting(channel_id, f"subtitles.{key}", default=default_value)
+        for key, default_value in global_sub_config.items()
+    }
+    subtitle_config["words_per_group"] = settings_manager.get_setting(
+        channel_id, "subtitles.words_per_group", default=10
+    )
 
     audio_path = storage.resolve_path(voice_track.file_path)
     audio_duration = _get_audio_duration(audio_path)
@@ -214,7 +230,7 @@ def assemble_video(
         ass_temp_path = None
         if settings.video["subtitles"].get("enabled", True):
             ass_temp_path = temp_dir / f"script_{script.id}.ass"
-            generate_ass(script.content, audio_duration, ass_temp_path, _WIDTH, _HEIGHT)
+            generate_ass(script.content, audio_duration, ass_temp_path, _WIDTH, _HEIGHT, subtitle_config)
 
         video_temp_path = temp_dir / f"script_{script.id}.mp4"
         _mux_audio_and_subtitles(background_path, audio_path, ass_temp_path, video_temp_path)

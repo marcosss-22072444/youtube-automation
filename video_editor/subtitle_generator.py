@@ -29,7 +29,7 @@ _ASS_COLORS = {
 }
 
 
-def _split_into_chunks(text: str) -> list[str]:
+def _split_into_chunks(text: str, words_per_group: int) -> list[str]:
     """Divide el texto en fragmentos cortos y legibles."""
     sentences = re.split(r"(?<=[.!?])\s+", text.strip())
 
@@ -38,16 +38,18 @@ def _split_into_chunks(text: str) -> list[str]:
         words = sentence.split()
         if not words:
             continue
-        for i in range(0, len(words), _MAX_WORDS_PER_SUBTITLE):
-            chunk = " ".join(words[i:i + _MAX_WORDS_PER_SUBTITLE])
+        for i in range(0, len(words), words_per_group):
+            chunk = " ".join(words[i:i + words_per_group])
             chunks.append(chunk)
 
     return chunks
 
 
-def _calculate_segments(script_content: str, audio_duration_seconds: float) -> list[tuple[str, float, float]]:
+def _calculate_segments(
+    script_content: str, audio_duration_seconds: float, words_per_group: int = _MAX_WORDS_PER_SUBTITLE
+) -> list[tuple[str, float, float]]:
     """Devuelve una lista de (texto, inicio_segundos, fin_segundos)."""
-    chunks = _split_into_chunks(script_content)
+    chunks = _split_into_chunks(script_content, words_per_group)
     total_words = sum(len(chunk.split()) for chunk in chunks)
 
     if total_words == 0:
@@ -99,7 +101,7 @@ def generate_srt(script_content: str, audio_duration_seconds: float, output_path
 
 def generate_ass(
     script_content: str, audio_duration_seconds: float, output_path: Path,
-    video_width: int, video_height: int,
+    video_width: int, video_height: int, subtitle_config: dict,
 ) -> Path:
     """
     Genera un archivo .ass con resolución y estilo explícitos (fuente,
@@ -107,8 +109,9 @@ def generate_ass(
     los subtítulos en el vídeo de forma fiable, sin depender del
     escalado automático de FFmpeg al convertir desde .srt.
     """
-    segments = _calculate_segments(script_content, audio_duration_seconds)
-    sub_config = settings.video["subtitles"]
+    words_per_group = subtitle_config.get("words_per_group", _MAX_WORDS_PER_SUBTITLE)
+    segments = _calculate_segments(script_content, audio_duration_seconds, words_per_group)
+    sub_config = subtitle_config
 
     alignment = {"bottom": 2, "center": 5, "top": 8}.get(sub_config.get("position", "bottom"), 2)
     font_color = _ASS_COLORS.get(sub_config.get("font_color", "white"), "&H00FFFFFF")
