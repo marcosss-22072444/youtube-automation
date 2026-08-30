@@ -31,7 +31,9 @@ class PixabayProvider(StockClipProvider):
     def __init__(self, api_key: str | None = None):
         self._api_key = api_key or settings.pixabay_api_key
 
-    def search(self, query: str, max_results: int) -> list[ClipCandidate]:
+    def search(self, query: str, max_results: int, orientation_hint: str | None = None) -> list[ClipCandidate]:
+        # Pixabay no soporta filtro de orientación en la API; orientation_hint se ignora aquí,
+        # el ranking por orientación se hace en SceneAssetResolver con width/height reales.
         try:
             response = requests.get(
                 _SEARCH_URL,

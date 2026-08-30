@@ -58,54 +58,59 @@ class SceneAssetResolver:
         # (ej: bloqueados por rate limit) — no se vuelven a intentar.
         self._unavailable_providers: set[int] = set()
 
-    def resolve(self, query: str, output_path: Path) -> tuple[str, str]:
+    def resolve(self, queries: list[str], content_type: str, output_path: Path) -> tuple[str, str]:
         """
-        Resuelve el asset de una escena y lo guarda en output_path.
-        Si un proveedor de stock falla de forma que indica que está
-        bloqueado (ProviderUnavailableError), se marca como no
-        disponible para el resto de este vídeo y se pasa directamente
-        al siguiente proveedor, sin volver a intentarlo.
-
-        Returns:
-            (asset_type, source): ("video", "pexels"/"pixabay") o ("image", "sdxl").
+        queries: lista ordenada de mas especifica a mas generica (nivel 1..N).
+        Prioridad: nivel de especificidad > orientacion > proveedor.
+        Nunca baja de nivel si el nivel actual tuvo resultados (en cualquier orientacion).
         """
         candidates_per_search = settings.media_sources["candidates_per_search"]
         avoid_repetition = settings.media_sources["avoid_repetition"]
+        preferred_orientation = settings.visuals_matching["orientation_priority"].get(content_type, "vertical")
+        other_orientation = "horizontal" if preferred_orientation == "vertical" else "vertical"
 
-        for provider in self._clip_providers:
-            if id(provider) in self._unavailable_providers:
-                continue
+        for query in queries:
+            for orientation in (preferred_orientation, other_orientation):
+                for provider in self._clip_providers:
+                    if id(provider) in self._unavailable_providers:
+                        continue
 
-            try:
-                candidates = provider.search(query, candidates_per_search)
-            except ProviderUnavailableError as error:
-                logger.warning(
-                    f"{type(provider).__name__} no disponible, se omite el resto "
-                    f"del vídeo para este proveedor: {error}"
-                )
-                self._unavailable_providers.add(id(provider))
-                continue
+                    try:
+                        candidates = provider.search(query, candidates_per_search, orientation_hint=orientation)
+                    except ProviderUnavailableError as error:
+                        logger.warning(f"{type(provider).__name__} no disponible: {error}")
+                        self._unavailable_providers.add(id(provider))
+                        continue
 
-            if avoid_repetition:
-                fresh = [c for c in candidates if c.id not in self._used_clip_ids]
-                chosen_pool = fresh or candidates  # si se agotan, se permite repetir
-            else:
-                chosen_pool = candidates
+                    candidates = self._rank_by_orientation(candidates, orientation)
 
-            if not chosen_pool:
-                continue
+                    if avoid_repetition:
+                        fresh = [c for c in candidates if c.id not in self._used_clip_ids]
+                        chosen_pool = fresh or candidates
+                    else:
+                        chosen_pool = candidates
 
-            candidate = chosen_pool[0]
-            try:
-                provider.download(candidate, output_path)
-            except Exception as error:
-                logger.warning(f"Fallo al descargar candidato de {candidate.source}: {error}")
-                continue
+                    if not chosen_pool:
+                        continue
 
-            self._used_clip_ids.add(candidate.id)
-            logger.info(f"Escena resuelta con clip de {candidate.source} ('{query}').")
-            return "video", candidate.source
+                    candidate = chosen_pool[0]
+                    try:
+                        provider.download(candidate, output_path)
+                    except Exception as error:
+                        logger.warning(f"Fallo al descargar candidato de {candidate.source}: {error}")
+                        continue
 
-        logger.info(f"Ningún clip de stock encontrado para '{query}', generando imagen con SDXL.")
-        self._image_provider.generate(query, output_path)
+                    self._used_clip_ids.add(candidate.id)
+                    logger.info(f"Escena resuelta: '{query}' ({orientation}) -> {candidate.source}")
+                    return "video", candidate.source
+
+        logger.info(f"Sin clips de stock para ninguna consulta, generando imagen con SDXL: '{queries[-1]}'")
+        self._image_provider.generate(queries[-1], output_path)
         return "image", "sdxl"
+
+    @staticmethod
+    def _rank_by_orientation(candidates: list, preferred: str) -> list:
+        def matches(c):
+            is_vertical = c.height > c.width
+            return (preferred == "vertical") == is_vertical
+        return sorted(candidates, key=lambda c: not matches(c))

@@ -32,14 +32,15 @@ logger = get_logger(__name__)
 
 _SYSTEM_INSTRUCTION = (
     "Eres un editor de vídeo que busca clips de stock para un guion de "
-    "YouTube. Recibes un guion y debes dividirlo en escenas visuales. "
-    "Decide tú cuántas escenas son necesarias según el contenido (no hay "
-    "un número fijo). Respondes ÚNICAMENTE con una escena por línea, cada "
-    "línea con este formato exacto:\n"
-    "ESCENA: <consulta de búsqueda corta en inglés, 2-4 palabras clave, "
-    "apta para buscar en un banco de vídeos de stock, ej: 'forest path "
-    "night', 'raccoon close up'>\n"
-    "No incluyas numeración, títulos ni ningún otro texto."
+    "YouTube. Divide el guion en escenas visuales (decide tú cuántas, "
+    "salvo que se indique un número exacto). Para CADA escena, genera "
+    "varios niveles de búsqueda en inglés, de más específico a más genérico:\n"
+    "- Nivel 1: el sujeto/objeto EXACTO mencionado (nombre de modelo, pieza concreta)\n"
+    "- Nivel 2: un concepto muy cercano si el nivel 1 fuera raro de encontrar\n"
+    "- Nivel 3: la categoría genérica relacionada\n"
+    "Responde con una línea por escena, formato exacto:\n"
+    "ESCENA: <nivel1> | <nivel2> | <nivel3>\n"
+    "No incluyas numeración ni texto adicional."
 )
 
 
@@ -65,7 +66,9 @@ def _split_script_into_scenes(
     for line in respuesta.strip().splitlines():
         line = line.strip()
         if line.upper().startswith("ESCENA:"):
-            scenes.append(line.split(":", 1)[1].strip())
+            query_levels = [q.strip() for q in line.split(":", 1)[1].split("|") if q.strip()]
+            if query_levels:
+                scenes.append(query_levels)
 
     if not scenes:
         raise SceneSplittingError(
@@ -115,8 +118,8 @@ def generate_visuals_for_script(
         pause_every = settings.media_sources["pause_every_n_scenes"]
         pause_range = settings.media_sources["pause_seconds"]
 
-        for scene_number, query in enumerate(scene_queries, start=1):
-            asset_type, source = resolver.resolve(query, temp_dir / f"scene_{scene_number}_raw")
+        for scene_number, query_levels in enumerate(scene_queries, start=1):
+            asset_type, source = resolver.resolve(query_levels, script.content_type, temp_dir / f"scene_{scene_number}_raw")
 
             # El resolver guarda con extensión implícita según el tipo;
             # normalizamos la ruta real generada antes de publicarla.
@@ -132,7 +135,7 @@ def generate_visuals_for_script(
             visual = Visual(
                 script_id=script.id,
                 scene_number=scene_number,
-                image_prompt=query,
+                image_prompt=query_levels[0],
                 file_path=key,
                 asset_type=asset_type,
                 source=source,

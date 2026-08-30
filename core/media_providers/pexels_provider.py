@@ -31,12 +31,13 @@ class PexelsProvider(StockClipProvider):
     def __init__(self, api_key: str | None = None):
         self._headers = {"Authorization": api_key or settings.pexels_api_key}
 
-    def search(self, query: str, max_results: int) -> list[ClipCandidate]:
+    def search(self, query: str, max_results: int, orientation_hint: str | None = None) -> list[ClipCandidate]:
+        orientation = "portrait" if orientation_hint == "vertical" else "landscape" if orientation_hint == "horizontal" else "portrait"
         try:
             response = requests.get(
                 _SEARCH_URL,
                 headers=self._headers,
-                params={"query": query, "per_page": max_results, "orientation": "portrait"},
+                params={"query": query, "per_page": max_results, "orientation": orientation},
                 timeout=15,
             )
         except requests.RequestException as error:

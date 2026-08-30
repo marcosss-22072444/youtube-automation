@@ -113,3 +113,12 @@ research:
     Investiga hechos concretos, cifras y especificaciones relevantes
     para el tema del vídeo. Prioriza fuentes oficiales y medios
     especializados. Ignora contenido promocional o no verificable.
+
+visuals_matching:
+  enabled: true
+  orientation_priority:
+    short: "vertical"
+    long: "horizontal"
+  specificity_levels: 4
+  min_queries_per_scene: 2
+  max_queries_per_scene: 4

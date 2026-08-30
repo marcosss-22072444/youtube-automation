@@ -111,6 +111,16 @@ class Settings:
                 "font_color": "auto", "outline_width": 8, "max_lines": 3,
             },
         )
+        self.visuals_matching: dict = yaml_config.get(
+            "visuals_matching",
+            {
+                "enabled": True,
+                "orientation_priority": {"short": "vertical", "long": "horizontal"},
+                "specificity_levels": 4,
+                "min_queries_per_scene": 2,
+                "max_queries_per_scene": 4,
+                },
+        )
         self.media_sources: dict = yaml_config.get(
             "media_sources",
             {

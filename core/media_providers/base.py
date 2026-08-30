@@ -28,7 +28,7 @@ class StockClipProvider(ABC):
     """Interfaz abstracta para cualquier proveedor de vídeos de stock."""
 
     @abstractmethod
-    def search(self, query: str, max_results: int) -> list[ClipCandidate]:
+    def search(self, query: str, max_results: int, orientation_hint: str | None = None) -> list[ClipCandidate]:
         """Busca clips candidatos para una consulta de texto."""
         raise NotImplementedError
 
