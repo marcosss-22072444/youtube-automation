@@ -20,6 +20,8 @@ from core.storage.base import StorageBackend
 from core.storage.factory import get_default_storage
 from core.exceptions import VoiceProviderError
 from core.logger import get_logger
+from core.config import settings
+from channel_settings import manager as settings_manager
 
 logger = get_logger(__name__)
 
@@ -46,7 +48,14 @@ def generate_voice_for_script(
         temp_path = Path(tmp) / f"script_{script.id}.wav"
 
         try:
-            provider.generate(script.content, channel.voice_name, temp_path)
+            voice_name = settings_manager.get_setting(channel.id, "voice.name", default=channel.voice_name)
+            speed = settings_manager.get_setting(
+                channel.id, "voice.speed", default=settings.voice_naturalness.get("speed", 1.0)
+            )
+            pause_ms = settings_manager.get_setting(
+                channel.id, "voice.pause_ms", default=settings.voice_naturalness.get("pause_between_segments_ms", 0)
+            )
+            provider.generate(script.content, voice_name, temp_path, speed=speed, pause_ms=pause_ms)
         except VoiceProviderError as error:
             raise error
 

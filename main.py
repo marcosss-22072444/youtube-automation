@@ -1,46 +1,60 @@
-"""main.py — TEST channel_settings: aislamiento, fallback, upsert, JSON, no-config."""
+"""main.py — TEST voice per-canal: name/speed/pause_ms via channel_settings, fallback intacto."""
 from core.logger import get_logger
 from core.schema import initialize_database
 from channels import manager as channel_manager
 from channel_settings import manager as settings_manager
+from ideas import repository as idea_repository
+from ideas.models import Idea
+from scripts import repository as script_repository
+from scripts.models import Script
+from voice.generator import generate_voice_for_script
+from core.voice_providers.base import VoiceProvider
 
 logger = get_logger(__name__)
 
+class FakeVoiceProvider(VoiceProvider):
+    def __init__(self):
+        self.calls = []
+    def generate(self, text, voice_name, output_path, speed=None, pause_ms=None):
+        self.calls.append({"voice_name": voice_name, "speed": speed, "pause_ms": pause_ms})
+        output_path.write_bytes(b"fake_audio")
+        return output_path
+
+def _make_script(channel_id, content_type="short"):
+    idea = Idea(channel_id=channel_id, content_type=content_type, title="T", summary="S")
+    idea = idea_repository.create(idea)
+    script = Script(idea_id=idea.id, content_type=content_type, content="Texto de prueba.", word_count=3)
+    return script_repository.create(script)
+
 def main():
     initialize_database()
-    c1 = channel_manager.create_channel(name="Canal Settings A", topic="t", shorts_per_week=1, long_videos_per_week=0)
-    c2 = channel_manager.create_channel(name="Canal Settings B", topic="t", shorts_per_week=1, long_videos_per_week=0)
 
-    p1 = settings_manager.get_setting(c1.id, "voice.speed", default=0.95) == 0.95
-    logger.info(f"P1 fallback global sin config: {p1}")
+    canal_custom = channel_manager.create_channel(
+        name="Canal Voz Custom", topic="t", shorts_per_week=1, long_videos_per_week=0, voice_name="ef_dora"
+    )
+    canal_default = channel_manager.create_channel(
+        name="Canal Voz Default", topic="t", shorts_per_week=1, long_videos_per_week=0, voice_name="ef_dora"
+    )
 
-    settings_manager.set_setting(c1.id, "voice.speed", 0.8)
-    p2 = settings_manager.get_setting(c1.id, "voice.speed", default=0.95) == 0.8
-    logger.info(f"P2 set/get valor propio: {p2}")
+    settings_manager.set_setting(canal_custom.id, "voice.name", "em_alex")
+    settings_manager.set_setting(canal_custom.id, "voice.speed", 0.7)
+    settings_manager.set_setting(canal_custom.id, "voice.pause_ms", 300)
 
-    p3 = settings_manager.get_setting(c2.id, "voice.speed", default=0.95) == 0.95
-    logger.info(f"P3 aislamiento entre canales: {p3}")
+    script1 = _make_script(canal_custom.id)
+    fake1 = FakeVoiceProvider()
+    generate_voice_for_script(script1, canal_custom, provider=fake1)
+    call1 = fake1.calls[0]
+    p1 = call1["voice_name"] == "em_alex" and call1["speed"] == 0.7 and call1["pause_ms"] == 300
+    logger.info(f"P1 canal con config propia usa sus valores: {p1} ({call1})")
 
-    settings_manager.set_setting(c1.id, "voice.speed", 0.7)
-    p4 = settings_manager.get_setting(c1.id, "voice.speed", default=0.95) == 0.7
-    logger.info(f"P4 upsert sobrescribe: {p4}")
+    script2 = _make_script(canal_default.id)
+    fake2 = FakeVoiceProvider()
+    generate_voice_for_script(script2, canal_default, provider=fake2)
+    call2 = fake2.calls[0]
+    p2 = call2["voice_name"] == "ef_dora" and call2["speed"] == 0.95 and call2["pause_ms"] == 200
+    logger.info(f"P2 canal sin config usa fallback (channels.voice_name + global): {p2} ({call2})")
 
-    subtitle_cfg = {"font_size": 60, "color": "yellow", "position": "bottom"}
-    settings_manager.set_setting(c1.id, "subtitles.style", subtitle_cfg)
-    p5 = settings_manager.get_setting(c1.id, "subtitles.style", default={}) == subtitle_cfg
-    logger.info(f"P5 JSON complejo (dict): {p5}")
-
-    c3 = channel_manager.create_channel(name="Canal Sin Config", topic="t", shorts_per_week=1, long_videos_per_week=0)
-    p6 = (settings_manager.get_setting(c3.id, "voice.speed", default=0.95) == 0.95 and
-          settings_manager.list_settings(c3.id) == {})
-    logger.info(f"P6 canal sin config usa defaults: {p6}")
-
-    settings_manager.delete_setting(c1.id, "voice.speed")
-    p7 = settings_manager.get_setting(c1.id, "voice.speed", default=0.95) == 0.95
-    logger.info(f"P7 delete vuelve a fallback: {p7}")
-
-    todas = all([p1, p2, p3, p4, p5, p6, p7])
-    logger.info("✅ TODO CORRECTO" if todas else "❌ FALLOS")
+    logger.info("✅ TODO CORRECTO" if p1 and p2 else "❌ FALLOS")
 
 if __name__ == "__main__":
     main()

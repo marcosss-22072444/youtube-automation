@@ -55,12 +55,17 @@ class KokoroProvider(VoiceProvider):
 
         return self._pipelines[lang_code]
 
-    def generate(self, text: str, voice_name: str, output_path: Path) -> Path:
+    def generate(
+        self, text: str, voice_name: str, output_path: Path,
+        speed: float | None = None, pause_ms: int | None = None,
+    ) -> Path:
         try:
             text = normalize_text_for_tts(text)
-            text = normalize_text_for_tts_with_ai(text)
             pipeline = self._get_pipeline(voice_name)
-            speed = settings.voice_naturalness.get("speed", 1.0)
+            speed = speed if speed is not None else settings.voice_naturalness.get("speed", 1.0)
+            generator = pipeline(text, voice=voice_name, speed=speed)
+
+            pause_ms = pause_ms if pause_ms is not None else settings.voice_naturalness.get("pause_between_segments_ms", 0)
             generator = pipeline(text, voice=voice_name, speed=speed)
 
             pause_ms = settings.voice_naturalness.get("pause_between_segments_ms", 0)

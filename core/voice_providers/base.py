@@ -15,7 +15,10 @@ class VoiceProvider(ABC):
     """Interfaz abstracta para cualquier proveedor de voz IA (texto -> audio)."""
 
     @abstractmethod
-    def generate(self, text: str, voice_name: str, output_path: Path) -> Path:
+    def generate(
+        self, text: str, voice_name: str, output_path: Path,
+        speed: float | None = None, pause_ms: int | None = None,
+    ) -> Path:
         """
         Genera audio narrado a partir de un texto, usando la voz indicada,
         y lo guarda en output_path.
