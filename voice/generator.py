@@ -10,6 +10,9 @@ el resto del proyecto lo referencie por clave lógica, no por ruta.
 import tempfile
 from pathlib import Path
 
+import json
+from core.alignment.base import WordTimestamp
+from core.alignment.torchaudio_provider import TorchaudioForcedAlignmentProvider
 from channels.models import Channel
 from scripts.models import Script
 from voice import repository as voice_repository
@@ -61,10 +64,25 @@ def generate_voice_for_script(
 
         storage.save(temp_path, key)
 
+        timestamps_key = None
+        try:
+            aligner = TorchaudioForcedAlignmentProvider()
+            timestamps = aligner.align(temp_path, script.content)
+            timestamps_json = json.dumps([
+                {"word": t.word, "start": t.start_seconds, "end": t.end_seconds} for t in timestamps
+            ])
+            timestamps_temp_path = temp_path.with_suffix(".json")
+            timestamps_temp_path.write_text(timestamps_json, encoding="utf-8")
+            timestamps_key = f"voice/script_{script.id}_words.json"
+            storage.save(timestamps_temp_path, timestamps_key)
+        except Exception as error:
+            logger.warning(f"Fallo en alineación forzada, subtítulos usarán fallback proporcional: {error}")
+
     voice_track = VoiceTrack(
         script_id=script.id,
         file_path=key,
-        voice_name=channel.voice_name,
+        voice_name=voice_name,
+        word_timestamps_path=timestamps_key,
     )
     saved_track = voice_repository.create(voice_track)
 

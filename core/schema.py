@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS voice_tracks (
     script_id INTEGER NOT NULL,
     file_path TEXT NOT NULL,
     voice_name TEXT NOT NULL,
+    word_timestamps_path TEXT,
     created_at TEXT NOT NULL,
     FOREIGN KEY (script_id) REFERENCES scripts (id) ON DELETE CASCADE
 );

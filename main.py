@@ -1,44 +1,42 @@
-"""main.py — TEST subtitles per-canal: font_size/color/words_per_group via channel_settings."""
+"""main.py — PRUEBA REAL end-to-end: subtitulos karaoke con timestamps reales."""
 from core.logger import get_logger
 from core.schema import initialize_database
+from core.constants import CONTENT_TYPE_SHORT
 from channels import manager as channel_manager
-from channel_settings import manager as settings_manager
-from core.config import settings
+from ideas.generator import generate_idea_for_channel
+from scripts.generator import generate_script_for_idea
+from voice.generator import generate_voice_for_script
+from visuals.generator import generate_visuals_for_script
+from video_editor.assembler import assemble_video, _get_audio_duration
+from core.storage.factory import get_default_storage
 
 logger = get_logger(__name__)
 
 def main():
     initialize_database()
-    canal = channel_manager.create_channel(name="Canal Subs Custom", topic="t", shorts_per_week=1, long_videos_per_week=0)
-    canal_default = channel_manager.create_channel(name="Canal Subs Default", topic="t", shorts_per_week=1, long_videos_per_week=0)
+    storage = get_default_storage()
 
-    settings_manager.set_setting(canal.id, "subtitles.font_size", 90)
-    settings_manager.set_setting(canal.id, "subtitles.font_color", "red")
-    settings_manager.set_setting(canal.id, "subtitles.words_per_group", 3)
+    canal = next((c for c in channel_manager.list_channels() if c.name == "Curiosidades de Superdeportivos"), None)
+    if canal is None:
+        canal = channel_manager.create_channel(
+            name="Curiosidades de Superdeportivos", topic="Coches deportivos",
+            shorts_per_week=5, long_videos_per_week=1, voice_name="em_alex",
+        )
 
-    global_cfg = settings.video["subtitles"]
+    idea = generate_idea_for_channel(canal, content_type=CONTENT_TYPE_SHORT)
+    logger.info(f"Idea: {idea.title}")
 
-    resolved_custom = {
-        key: settings_manager.get_setting(canal.id, f"subtitles.{key}", default=v)
-        for key, v in global_cfg.items()
-    }
-    resolved_custom["words_per_group"] = settings_manager.get_setting(canal.id, "subtitles.words_per_group", default=10)
+    script = generate_script_for_idea(idea)
+    logger.info(f"Guion: {script.word_count} palabras")
 
-    resolved_default = {
-        key: settings_manager.get_setting(canal_default.id, f"subtitles.{key}", default=v)
-        for key, v in global_cfg.items()
-    }
-    resolved_default["words_per_group"] = settings_manager.get_setting(canal_default.id, "subtitles.words_per_group", default=10)
+    voice_track = generate_voice_for_script(script, canal)
+    logger.info(f"Timestamps guardados: {voice_track.word_timestamps_path}")
+    audio_duration = _get_audio_duration(storage.resolve_path(voice_track.file_path))
 
-    p1 = resolved_custom["font_size"] == 90 and resolved_custom["font_color"] == "red" and resolved_custom["words_per_group"] == 3
-    logger.info(f"P1 canal con config propia resuelve valores correctos: {p1} ({resolved_custom['font_size']}, {resolved_custom['font_color']}, {resolved_custom['words_per_group']})")
+    visuals = generate_visuals_for_script(script, audio_duration_seconds=audio_duration, channel_id=canal.id)
 
-    p2 = (resolved_default["font_size"] == global_cfg["font_size"] and
-          resolved_default["font_color"] == global_cfg["font_color"] and
-          resolved_default["words_per_group"] == 10)
-    logger.info(f"P2 canal sin config usa fallback global intacto: {p2} ({resolved_default['font_size']}, {resolved_default['font_color']}, {resolved_default['words_per_group']})")
-
-    logger.info("✅ TODO CORRECTO" if p1 and p2 else "❌ FALLOS")
+    video = assemble_video(script, visuals, voice_track, channel_id=canal.id)
+    logger.info(f"✅ VIDEO FINAL: {storage.resolve_path(video.file_path)}")
 
 if __name__ == "__main__":
     main()

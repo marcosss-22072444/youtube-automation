@@ -18,6 +18,7 @@ def _row_to_voice_track(row: sqlite3.Row) -> VoiceTrack:
         script_id=row["script_id"],
         file_path=row["file_path"],
         voice_name=row["voice_name"],
+        word_timestamps_path=row["word_timestamps_path"],
         created_at=row["created_at"],
     )
 
@@ -27,14 +28,16 @@ def create(voice_track: VoiceTrack) -> VoiceTrack:
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO voice_tracks (script_id, file_path, voice_name, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO voice_tracks (script_id, file_path, voice_name, word_timestamps_path, created_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (voice_track.script_id, voice_track.file_path, voice_track.voice_name, voice_track.created_at),
+            (
+                voice_track.script_id, voice_track.file_path, voice_track.voice_name,
+                voice_track.word_timestamps_path, voice_track.created_at,
+            ),
         )
     voice_track.id = cursor.lastrowid
     return voice_track
-
 
 def get_by_script_id(script_id: int) -> VoiceTrack | None:
     """Devuelve el audio de un guion concreto, o None si aún no tiene."""

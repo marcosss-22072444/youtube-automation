@@ -17,7 +17,6 @@ from visuals.models import Visual
 from voice.models import VoiceTrack
 from video_editor import repository as video_repository
 from video_editor.models import Video
-from video_editor.subtitle_generator import generate_srt, generate_ass
 from video_editor.exceptions import VideoAssemblyError
 from core.storage.base import StorageBackend
 from core.storage.factory import get_default_storage
@@ -25,6 +24,7 @@ from core.config import settings
 from core.logger import get_logger
 from ideas import repository as idea_repository
 from channel_settings import manager as settings_manager
+from video_editor.subtitle_generator import generate_srt, generate_ass, generate_ass_karaoke
 
 import subprocess
 
@@ -194,7 +194,7 @@ def assemble_video(
         for key, default_value in global_sub_config.items()
     }
     subtitle_config["words_per_group"] = settings_manager.get_setting(
-        channel_id, "subtitles.words_per_group", default=10
+        channel_id, "subtitles.words_per_group", default=3
     )
 
     audio_path = storage.resolve_path(voice_track.file_path)
@@ -228,9 +228,15 @@ def assemble_video(
             storage.save(srt_temp_path, srt_key)
 
         ass_temp_path = None
-        if settings.video["subtitles"].get("enabled", True):
+        if subtitle_config.get("enabled", True):
             ass_temp_path = temp_dir / f"script_{script.id}.ass"
-            generate_ass(script.content, audio_duration, ass_temp_path, _WIDTH, _HEIGHT, subtitle_config)
+            if voice_track.word_timestamps_path:
+                import json
+                timestamps_path = storage.resolve_path(voice_track.word_timestamps_path)
+                word_timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
+                generate_ass_karaoke(word_timestamps, ass_temp_path, _WIDTH, _HEIGHT, subtitle_config)
+            else:
+                generate_ass(script.content, audio_duration, ass_temp_path, _WIDTH, _HEIGHT, subtitle_config)
 
         video_temp_path = temp_dir / f"script_{script.id}.mp4"
         _mux_audio_and_subtitles(background_path, audio_path, ass_temp_path, video_temp_path)

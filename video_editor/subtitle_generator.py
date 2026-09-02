@@ -151,3 +151,63 @@ def generate_ass(
 
     logger.info(f"Subtítulos .ass generados: {output_path} ({len(segments)} líneas)")
     return output_path
+
+def generate_ass_karaoke(
+    word_timestamps: list[dict], output_path: Path,
+    video_width: int, video_height: int, subtitle_config: dict,
+) -> Path:
+    """
+    Genera un .ass estilo TikTok: bloques de N palabras (words_per_group),
+    con la palabra activa resaltada en amarillo y el resto en blanco,
+    usando timestamps reales por palabra (alineación forzada).
+    """
+    words_per_group = subtitle_config.get("words_per_group", 3)
+    font_size = subtitle_config.get("font_size", 60)
+    outline_color = _ASS_COLORS.get(subtitle_config.get("outline_color", "black"), "&H00000000")
+    outline_width = subtitle_config.get("outline_width", 3)
+    alignment = {"bottom": 2, "center": 5, "top": 8}.get(subtitle_config.get("position", "bottom"), 2)
+    margin_v = round(video_height * 0.05)
+
+    active_color = _ASS_COLORS.get(subtitle_config.get("active_word_color", "yellow"), "&H0000FFFF")
+    inactive_color = _ASS_COLORS.get(subtitle_config.get("inactive_word_color", "white"), "&H00FFFFFF")
+
+    # Cierra huecos de silencio: cada palabra dura hasta que empieza la
+    # siguiente, para que el bloque no desaparezca entre palabra y palabra.
+    for i in range(len(word_timestamps) - 1):
+        word_timestamps[i]["end"] = word_timestamps[i + 1]["start"]
+
+    groups = [word_timestamps[i:i + words_per_group] for i in range(0, len(word_timestamps), words_per_group)]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as ass_file:
+        ass_file.write("[Script Info]\nScriptType: v4.00+\n")
+        ass_file.write(f"PlayResX: {video_width}\nPlayResY: {video_height}\n\n")
+        ass_file.write("[V4+ Styles]\n")
+        ass_file.write(
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+            "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+            "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+            "Alignment, MarginL, MarginR, MarginV, Encoding\n"
+        )
+        ass_file.write(
+            f"Style: Default,Arial,{font_size},{inactive_color},&H000000FF,"
+            f"{outline_color},&H00000000,1,0,0,0,100,100,0,0,1,"
+            f"{outline_width},0,{alignment},20,20,{margin_v},1\n\n"
+        )
+        ass_file.write("[Events]\n")
+        ass_file.write("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
+
+        for group in groups:
+            for i, active_word in enumerate(group):
+                parts = []
+                for j, w in enumerate(group):
+                    color = active_color if j == i else inactive_color
+                    parts.append(f"{{\\c{color}}}{w['word'].upper()}")
+                text = "\\N".join(parts) if False else " ".join(parts)
+
+                start = _format_ass_timestamp(active_word["start"])
+                end = _format_ass_timestamp(active_word["end"])
+                ass_file.write(f"Dialogue: 0,{start},{end},Default,,0,0,0,,{text}\n")
+
+    logger.info(f"Subtítulos karaoke .ass generados: {output_path} ({len(groups)} bloques)")
+    return output_path

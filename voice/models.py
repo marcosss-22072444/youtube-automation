@@ -17,6 +17,7 @@ class VoiceTrack:
     script_id: int
     file_path: str
     voice_name: str
+    word_timestamps_path: Optional[str] = None
     id: Optional[int] = None
     created_at: Optional[str] = None
 
