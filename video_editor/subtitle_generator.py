@@ -199,11 +199,17 @@ def generate_ass_karaoke(
 
         for group in groups:
             for i, active_word in enumerate(group):
+                pop_enabled = subtitle_config.get("pop_effect_enabled", True)
+                pop_scale = subtitle_config.get("pop_scale_percent", 130)
                 parts = []
                 for j, w in enumerate(group):
                     color = active_color if j == i else inactive_color
-                    parts.append(f"{{\\c{color}}}{w['word'].upper()}")
-                text = "\\N".join(parts) if False else " ".join(parts)
+                    if j == i and pop_enabled:
+                        scale_tag = f"\\fscx{pop_scale}\\fscy{pop_scale}\\t(0,120,\\fscx100\\fscy100)"
+                        parts.append(f"{{\\c{color}{scale_tag}}}{w['word'].upper()}")
+                    else:
+                        parts.append(f"{{\\c{color}}}{w['word'].upper()}")
+                text = " ".join(parts)
 
                 start = _format_ass_timestamp(active_word["start"])
                 end = _format_ass_timestamp(active_word["end"])
