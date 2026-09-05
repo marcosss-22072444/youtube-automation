@@ -16,6 +16,7 @@ from core.exceptions import AIProviderError
 from core.logger import get_logger
 from core.constants import CONTENT_TYPE_SHORT, VALID_CONTENT_TYPES
 from core.ai_providers.factory import get_text_provider_for_channel
+from channel_settings import manager as settings_manager
 
 logger = get_logger(__name__)
 
@@ -87,9 +88,10 @@ def generate_idea_for_channel(
 
     previous_titles = idea_repository.get_recent_titles_for_context(channel.id)
     prompt = _build_prompt(channel, content_type, previous_titles)
+    system_instruction = settings_manager.get_setting(channel.id, "ideas.system_instruction_override", default=_SYSTEM_INSTRUCTION)
 
     try:
-        respuesta = provider.generate(prompt, system_instruction=_SYSTEM_INSTRUCTION)
+        respuesta = provider.generate(prompt, system_instruction=system_instruction)
     except AIProviderError as error:
         raise IdeaGenerationError(f"Fallo al generar idea con IA: {error}") from error
 

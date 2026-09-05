@@ -16,6 +16,7 @@ from core.config import settings
 from core.exceptions import AIProviderError
 from core.logger import get_logger
 from research.models import ResearchResult
+from channel_settings import manager as settings_manager
 
 logger = get_logger(__name__)
 
@@ -71,9 +72,10 @@ def generate_script_for_idea(
 
     target_words = _calculate_target_words(idea.content_type)
     prompt = _build_prompt(idea, target_words, research_result)
+    system_instruction = settings_manager.get_setting(idea.channel_id, "scripts.system_instruction_override", default=_SYSTEM_INSTRUCTION)
 
     try:
-        content = provider.generate(prompt, system_instruction=_SYSTEM_INSTRUCTION)
+        content = provider.generate(prompt, system_instruction=system_instruction)
     except AIProviderError as error:
         raise ScriptGenerationError(f"Fallo al generar guion con IA: {error}") from error
 
