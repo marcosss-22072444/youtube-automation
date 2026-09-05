@@ -27,18 +27,16 @@ def get_default_text_provider() -> TextAIProvider:
 
 
 def get_text_provider_for_channel(channel_id: int) -> TextAIProvider:
-    """
-    Devuelve el proveedor de IA de texto para un canal concreto,
-    usando sus credenciales propias si las tiene configuradas, o
-    cayendo a las claves globales de .env si no (según
-    config.yaml: credentials.allow_global_fallback).
-    """
+    from channel_settings import manager as settings_manager
+
     store = get_default_credentials_store()
 
     gemini_key = resolve_credential(channel_id, "gemini", settings.gemini_api_key, store)
     groq_key = resolve_credential(channel_id, "groq", settings.groq_api_key, store)
+    gemini_model = settings_manager.get_setting(channel_id, "ai.gemini_model_override", default=settings.gemini_model)
+    groq_model = settings_manager.get_setting(channel_id, "ai.groq_model_override", default=settings.groq_model)
 
     return FallbackProvider([
-        GeminiProvider(api_key=gemini_key),
-        GroqProvider(api_key=groq_key),
+        GeminiProvider(api_key=gemini_key, model_name=gemini_model),
+        GroqProvider(api_key=groq_key, model_name=groq_model),
     ])

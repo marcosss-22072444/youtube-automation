@@ -39,6 +39,7 @@ class SceneAssetResolver:
     def __init__(self, channel_id: int, image_provider: ImageProvider | None = None):
         self._image_provider = image_provider or get_default_image_provider()
         self._used_clip_ids: set[str] = set()
+        self._channel_id = channel_id
 
         store = get_default_credentials_store()
         order = settings.media_sources["order"]
@@ -66,7 +67,11 @@ class SceneAssetResolver:
         """
         candidates_per_search = settings.media_sources["candidates_per_search"]
         avoid_repetition = settings.media_sources["avoid_repetition"]
-        preferred_orientation = settings.visuals_matching["orientation_priority"].get(content_type, "vertical")
+        from channel_settings import manager as settings_manager
+        default_orientation = settings.visuals_matching["orientation_priority"].get(content_type, "vertical")
+        preferred_orientation = settings_manager.get_setting(
+            self._channel_id, f"visuals.orientation_override.{content_type}", default=default_orientation
+        )
         other_orientation = "horizontal" if preferred_orientation == "vertical" else "vertical"
 
         for query in queries:
