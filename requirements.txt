@@ -15,3 +15,7 @@ google-auth-httplib2
    tzdata
 
 tavily-python
+
+fastapi
+uvicorn[standard]
+httpx

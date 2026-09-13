@@ -31,6 +31,7 @@ class Settings:
         self.pexels_api_key: str = self._get_required_env("PEXELS_API_KEY")
         self.pixabay_api_key: str = self._get_required_env("PIXABAY_API_KEY")
         self.tavily_api_key: str = self._get_required_env("TAVILY_API_KEY")
+        self.remote_api_key: str = self._get_required_env("REMOTE_API_KEY")
 
         # --- Configuración no sensible desde config.yaml ---
         yaml_config = self._load_yaml_config()

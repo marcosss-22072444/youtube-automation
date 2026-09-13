@@ -1,39 +1,34 @@
-"""main.py — TEST ai.text_model_override + visuals.orientation_override."""
+"""main.py — TEST Remote API: auth y CRUD basico de channels."""
+from fastapi.testclient import TestClient
 from core.logger import get_logger
 from core.schema import initialize_database
 from core.config import settings
-from channels import manager as channel_manager
-from channel_settings import manager as settings_manager
-from core.ai_providers.factory import get_text_provider_for_channel
-from core.ai_providers.gemini_provider import GeminiProvider
-from core.media_providers.scene_asset_resolver import SceneAssetResolver
+from remote_api.app import app
 
 logger = get_logger(__name__)
 
 def main():
     initialize_database()
-    canal = channel_manager.create_channel(name="Canal Model Test", topic="t", shorts_per_week=1, long_videos_per_week=0)
+    client = TestClient(app)
+    headers = {"X-API-Key": settings.remote_api_key}
 
-    provider = get_text_provider_for_channel(canal.id)
-    gemini = provider._providers[0]
-    p1 = gemini.model_name == settings.gemini_model
-    logger.info(f"P1 sin override, usa modelo global: {p1} ({gemini.model_name})")
+    r1 = client.get("/channels", headers={"X-API-Key": "clave_incorrecta"})
+    p1 = r1.status_code == 401
+    logger.info(f"P1 rechaza API key incorrecta: {p1}")
 
-    settings_manager.set_setting(canal.id, "ai.gemini_model_override", "gemini-custom-test")
-    provider2 = get_text_provider_for_channel(canal.id)
-    p2 = provider2._providers[0].model_name == "gemini-custom-test"
-    logger.info(f"P2 con override, usa modelo custom: {p2} ({provider2._providers[0].model_name})")
+    r2 = client.post("/channels", json={"name": "Canal API Test", "topic": "t", "shorts_per_week": 1}, headers=headers)
+    p2 = r2.status_code == 200
+    logger.info(f"P2 crea canal con API key correcta: {p2} ({r2.json() if p2 else r2.text})")
 
-    resolver = SceneAssetResolver(channel_id=canal.id)
-    p3 = resolver._channel_id == canal.id
-    logger.info(f"P3 resolver guarda channel_id: {p3}")
+    r3 = client.get("/channels", headers=headers)
+    p3 = r3.status_code == 200 and any(c["name"] == "Canal API Test" for c in r3.json())
+    logger.info(f"P3 lista incluye el canal creado: {p3}")
 
-    settings_manager.set_setting(canal.id, "visuals.orientation_override.short", "horizontal")
-    override = settings_manager.get_setting(canal.id, "visuals.orientation_override.short", default="vertical")
-    p4 = override == "horizontal"
-    logger.info(f"P4 override de orientacion aplicado: {p4}")
+    r4 = client.get("/channels/99999", headers=headers)
+    p4 = r4.status_code == 404
+    logger.info(f"P4 canal inexistente devuelve 404: {p4}")
 
-    logger.info("✅ TODO CORRECTO" if p1 and p2 and p3 and p4 else "❌ FALLOS")
+    logger.info("✅ TODO CORRECTO" if all([p1, p2, p3, p4]) else "❌ FALLOS")
 
 if __name__ == "__main__":
     main()
