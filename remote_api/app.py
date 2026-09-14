@@ -11,7 +11,8 @@ def verify_api_key(x_api_key: str = Header(...)):
     return True
 
 
-from remote_api.routers import channels, schedules, credentials
+from remote_api.routers import channels, schedules, credentials, stats
 app.include_router(channels.router, dependencies=[Depends(verify_api_key)])
 app.include_router(schedules.router, dependencies=[Depends(verify_api_key)])
 app.include_router(credentials.router, dependencies=[Depends(verify_api_key)])
+app.include_router(stats.router, dependencies=[Depends(verify_api_key)])
