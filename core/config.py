@@ -97,6 +97,7 @@ class Settings:
                 ),
             },
         )
+        self.remote_api: dict = yaml_config.get("remote_api", {"host": "0.0.0.0", "port": 8000})
         self.credentials: dict = yaml_config.get(
             "credentials", {"allow_global_fallback": True}
         )
