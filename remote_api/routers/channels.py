@@ -41,3 +41,29 @@ def get_channel(channel_id: int):
         return {"id": c.id, "name": c.name, "topic": c.topic, "status": c.status, "voice_name": c.voice_name}
     except ChannelNotFoundError:
         raise HTTPException(status_code=404, detail="Canal no encontrado")
+
+@router.post("/{channel_id}/pause")
+def pause_channel(channel_id: int):
+    try:
+        c = channel_manager.pause_channel(channel_id)
+        return {"id": c.id, "status": c.status}
+    except ChannelNotFoundError:
+        raise HTTPException(status_code=404, detail="Canal no encontrado")
+
+
+@router.post("/{channel_id}/activate")
+def activate_channel(channel_id: int):
+    try:
+        c = channel_manager.activate_channel(channel_id)
+        return {"id": c.id, "status": c.status}
+    except ChannelNotFoundError:
+        raise HTTPException(status_code=404, detail="Canal no encontrado")
+
+
+@router.delete("/{channel_id}")
+def delete_channel(channel_id: int):
+    try:
+        channel_manager.delete_channel(channel_id)
+        return {"deleted": channel_id}
+    except ChannelNotFoundError:
+        raise HTTPException(status_code=404, detail="Canal no encontrado")
