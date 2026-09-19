@@ -42,6 +42,12 @@ def add_schedule_entry(channel_id: int, content_type: str, day_of_week: int, tim
     logger.info(f"Canal {channel_id}: horario añadido ({content_type}, día={day_of_week}, hora={time_of_day})")
     return saved
 
+def update_schedule_entry(entry_id: int, content_type: str, day_of_week: int, time_of_day: str, enabled: bool = True) -> ScheduleEntry:
+    """Actualiza una franja existente, validando los mismos datos que al crearla."""
+    _validate_entry_data(content_type, day_of_week, time_of_day)
+    repository.update_entry(entry_id, content_type, day_of_week, time_of_day, enabled)
+    logger.info(f"Horario {entry_id} actualizado ({content_type}, día={day_of_week}, hora={time_of_day})")
+    return repository.get_entry_by_id(entry_id)
 
 def remove_schedule_entry(entry_id: int) -> None:
     """Elimina una franja de publicación."""

@@ -85,6 +85,13 @@ def get_entry_by_id(entry_id: int) -> ScheduleEntry | None:
         row = conn.execute("SELECT * FROM channel_schedules WHERE id = ?", (entry_id,)).fetchone()
     return _row_to_entry(row) if row else None
 
+def update_entry(entry_id: int, content_type: str, day_of_week: int, time_of_day: str, enabled: bool) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE channel_schedules SET content_type=?, day_of_week=?, time_of_day=?, enabled=? WHERE id=?",
+            (content_type, day_of_week, time_of_day, int(enabled), entry_id),
+        )
+
 
 # --- ScheduleRun / idempotencia ---
 

@@ -14,6 +14,12 @@ class ScheduleCreate(BaseModel):
     day_of_week: int
     time_of_day: str
 
+class ScheduleUpdate(BaseModel):
+    content_type: str
+    day_of_week: int
+    time_of_day: str
+    enabled: bool = True
+
 
 @router.get("/{channel_id}")
 def list_schedule(channel_id: int):
@@ -33,6 +39,15 @@ def create_schedule(data: ScheduleCreate):
     except ScheduleEntryError as error:
         raise HTTPException(status_code=400, detail=str(error))
 
+@router.patch("/{entry_id}")
+def update_schedule(entry_id: int, data: ScheduleUpdate):
+    try:
+        e = schedule_manager.update_schedule_entry(entry_id, data.content_type, data.day_of_week, data.time_of_day, data.enabled)
+        if e is None:
+            raise HTTPException(status_code=404, detail="Horario no encontrado")
+        return {"id": e.id, "content_type": e.content_type, "day_of_week": e.day_of_week, "time_of_day": e.time_of_day, "enabled": e.enabled}
+    except ScheduleEntryError as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
 @router.delete("/{entry_id}")
 def delete_schedule(entry_id: int):
