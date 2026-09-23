@@ -37,6 +37,7 @@ def _row_to_run(row: sqlite3.Row) -> ScheduleRun:
         next_retry_at=row["next_retry_at"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        recovered=bool(row["recovered"]), enqueued_at=row["enqueued_at"]
     )
 
 # --- ScheduleEntry ---
@@ -95,31 +96,17 @@ def update_entry(entry_id: int, content_type: str, day_of_week: int, time_of_day
 
 # --- ScheduleRun / idempotencia ---
 
-def claim_run(schedule_entry_id: int, run_date: str) -> ScheduleRun | None:
-    """
-    Intenta reclamar la ejecución de una franja en una fecha concreta.
-    Devuelve el ScheduleRun creado si tuvo éxito, o None si ya estaba
-    reclamada (por este mismo proceso u otro) — gracias al UNIQUE
-    (schedule_entry_id, run_date) en la base de datos.
-    """
+def claim_run(schedule_entry_id: int, run_date: str, recovered: bool = False) -> ScheduleRun | None:
     now = datetime.now().isoformat()
     try:
         with get_connection() as conn:
             cursor = conn.execute(
-                """
-                INSERT INTO schedule_runs
-                    (schedule_entry_id, run_date, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (schedule_entry_id, run_date, STATUS_QUEUED, now, now),
+                "INSERT INTO schedule_runs (schedule_entry_id, run_date, status, recovered, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (schedule_entry_id, run_date, STATUS_QUEUED, int(recovered), now, now),
             )
-        return ScheduleRun(
-            id=cursor.lastrowid, schedule_entry_id=schedule_entry_id,
-            run_date=run_date, status=STATUS_QUEUED, created_at=now, updated_at=now,
-        )
+        return ScheduleRun(id=cursor.lastrowid, schedule_entry_id=schedule_entry_id, run_date=run_date, status=STATUS_QUEUED, recovered=recovered, created_at=now, updated_at=now)
     except sqlite3.IntegrityError:
         return None
-
 
 def update_run_status(
     run_id: int, status: str, uploaded_video_id: int | None = None, error_message: str | None = None
@@ -171,3 +158,17 @@ def requeue_for_retry(run_id: int, new_retry_count: int) -> None:
             """,
             (new_retry_count, datetime.now().isoformat(), run_id),
         )
+
+def list_queued_recovered_not_enqueued() -> list[ScheduleRun]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM schedule_runs WHERE status='queued' AND recovered=1 AND enqueued_at IS NULL").fetchall()
+    return [_row_to_run(row) for row in rows]
+
+def mark_enqueued(run_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE schedule_runs SET enqueued_at=? WHERE id=?", (datetime.now().isoformat(), run_id))
+
+def has_run_for_date(schedule_entry_id: int, run_date: str) -> bool:
+    with get_connection() as conn:
+        row = conn.execute("SELECT 1 FROM schedule_runs WHERE schedule_entry_id=? AND run_date=?", (schedule_entry_id, run_date)).fetchone()
+    return row is not None

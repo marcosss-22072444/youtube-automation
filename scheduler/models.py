@@ -53,6 +53,8 @@ class ScheduleRun:
     id: Optional[int] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    recovered: bool = False
+    enqueued_at: Optional[str] = None
 
     def __post_init__(self):
         now = datetime.now().isoformat()

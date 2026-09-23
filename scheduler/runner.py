@@ -21,10 +21,14 @@ from scheduler.pipeline_executor import execute_job
 from error_handler.retry_manager import check_and_requeue_failed_runs
 from core.config import settings
 from core.logger import get_logger
+from datetime import timedelta
+from itertools import groupby
+
 
 logger = get_logger(__name__)
 
 _stop_event = threading.Event()
+_active_threads: list[threading.Thread] = []
 
 
 def _get_channel_timezone(channel_id: int) -> ZoneInfo:
@@ -62,6 +66,54 @@ def _detect_and_enqueue_due_entries() -> None:
             f"fecha={run_date}, hora={entry.time_of_day} ({tz.key})"
         )
 
+def _recover_missed_entries() -> None:
+    """Al arrancar: reclama (claim_run) franjas de esta semana perdidas dentro de la ventana, sin encolarlas todavia."""
+    window_hours = settings.scheduler.get("recovery_window_hours", 12)
+    entries = schedule_repository.list_all_enabled_entries()
+
+    for entry in entries:
+        canal = channel_manager.get_channel(entry.channel_id)
+        if canal.status != "active":
+            continue
+
+        tz = _get_channel_timezone(entry.channel_id)
+        now_local = datetime.now(tz)
+        hour, minute = map(int, entry.time_of_day.split(":"))
+
+        days_back = (now_local.weekday() - entry.day_of_week) % 7
+        scheduled_dt = (now_local - timedelta(days=days_back)).replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if scheduled_dt > now_local:
+            scheduled_dt -= timedelta(days=7)
+
+        if scheduled_dt >= now_local - timedelta(hours=window_hours) and scheduled_dt < now_local:
+            run_date = scheduled_dt.strftime("%Y-%m-%d")
+            if schedule_repository.has_run_for_date(entry.id, run_date):
+                continue
+            run = schedule_repository.claim_run(entry.id, run_date, recovered=True)
+            if run:
+                logger.info(f"Franja recuperada (PC apagado): canal={entry.channel_id}, tipo={entry.content_type}, fecha={run_date}")
+
+
+def _enqueue_pending_recovered() -> None:
+    """Encola franjas recuperadas pendientes, limitando cuantas por (channel_id, content_type) por ciclo."""
+    max_per_group = settings.scheduler.get("max_recovered_per_channel_type", 1)
+    pending = schedule_repository.list_queued_recovered_not_enqueued()
+
+    groups: dict[tuple[int, str], list] = {}
+    for run in pending:
+        entry = schedule_repository.get_entry_by_id(run.schedule_entry_id)
+        if entry is None:
+            continue
+        key = (entry.channel_id, entry.content_type)
+        groups.setdefault(key, []).append((run, entry))
+
+    for (channel_id, content_type), items in groups.items():
+        items.sort(key=lambda pair: pair[0].run_date)
+        for run, entry in items[:max_per_group]:
+            job = Job(schedule_run_id=run.id, channel_id=channel_id, content_type=content_type)
+            enqueue(job)
+            schedule_repository.mark_enqueued(run.id)
+            logger.info(f"Franja recuperada encolada: canal={channel_id}, tipo={content_type}, run={run.id}")
 
 def _detector_loop() -> None:
     """Bucle del hilo detector: revisa franjas pendientes cada check_interval_seconds."""
@@ -71,6 +123,7 @@ def _detector_loop() -> None:
     while not _stop_event.is_set():
         try:
             _detect_and_enqueue_due_entries()
+            _enqueue_pending_recovered()
             check_and_requeue_failed_runs()
         except Exception as error:
             logger.error(f"Error en el ciclo de detección de horarios: {error}")
@@ -96,6 +149,7 @@ def start_scheduler() -> list[threading.Thread]:
     Arranca el detector y el/los worker(s) en hilos separados, y
     devuelve la lista de hilos (para poder esperarlos o pararlos).
     """
+    _recover_missed_entries()
     _stop_event.clear()
     worker_count = settings.scheduler.get("worker_count", 1)
 
@@ -107,10 +161,14 @@ def start_scheduler() -> list[threading.Thread]:
         thread.start()
 
     logger.info(f"Scheduler iniciado: 1 detector + {worker_count} worker(s).")
+    _active_threads.clear()
+    _active_threads.extend(threads)
     return threads
 
-
 def stop_scheduler() -> None:
-    """Señala a todos los hilos del Scheduler que deben detenerse."""
+    """Señala a todos los hilos del Scheduler que deben detenerse y espera a que terminen."""
     _stop_event.set()
-    logger.info("Señal de parada enviada al Scheduler.")
+    for t in _active_threads:
+        t.join(timeout=3)
+    _active_threads.clear()
+    logger.info("Scheduler detenido.")

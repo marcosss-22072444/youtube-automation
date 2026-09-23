@@ -126,3 +126,6 @@ visuals_matching:
 remote_api:
   host: "0.0.0.0"
   port: 8000
+
+  recovery_window_hours: 12
+  max_recovered_per_channel_type: 1
